@@ -139,7 +139,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="logging\debugOutput.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="OpenCL\OpenCLBindingsAndHelpers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="logging\debugOutput.h" />
+    <ClInclude Include="OpenCL\OpenCLBindingsAndHelpers.h" />
+    <ClInclude Include="window\windowSetup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
