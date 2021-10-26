@@ -5,6 +5,8 @@
 #include "OpenCL/OpenCLBindingsAndHelpers.h"
 #include "OpenCL/specificHelpers.h"
 
+#include "rendering/Renderer.h"
+
 #include "logging/debugOutput.h"
 
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -28,23 +30,21 @@ void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {	
 	windowResized = true;
 }
 
-cl_mem outputFrame_computeImage;
-
 const cl_image_format computeOutputFrameFormat = { CL_RGBA, CL_UNSIGNED_INT8 };
 bool allocateComputeFrameBuffer() {
 	cl_int err;
-	outputFrame_computeImage = clCreateImage2D(compute::context, CL_MEM_WRITE_ONLY, &computeOutputFrameFormat, windowWidth, windowHeight, 0, nullptr, &err);
-	if (!outputFrame_computeImage) {
-		debuglogger::out << debuglogger::error << "failed to create outputFrame_computeImage" << debuglogger::endl;
+	compute::outputFrame = clCreateImage2D(compute::context, CL_MEM_WRITE_ONLY, &computeOutputFrameFormat, windowWidth, windowHeight, 0, nullptr, &err);
+	if (!compute::outputFrame) {
+		debuglogger::out << debuglogger::error << "failed to create compute::outputFrame" << debuglogger::endl;
 		return true;
 	}
 	return false;
 }
 
 bool reallocateComputeFrameBuffer() {
-	cl_int err = clReleaseMemObject(outputFrame_computeImage);
+	cl_int err = clReleaseMemObject(compute::outputFrame);
 	if (err != CL_SUCCESS) {
-		debuglogger::out << debuglogger::error << "failed to release outputFrame_computeImage" << debuglogger::endl;
+		debuglogger::out << debuglogger::error << "failed to release compute::outputFrame" << debuglogger::endl;
 		return true;
 	}
 	if (allocateComputeFrameBuffer()) { return true; }
@@ -52,14 +52,14 @@ bool reallocateComputeFrameBuffer() {
 }
 
 bool releaseComputeMemObjects() {
-	cl_int err = clReleaseMemObject(outputFrame_computeImage);
+	cl_int err = clReleaseMemObject(compute::outputFrame);
 	return err;					// This works because CL_SUCCESS is 0.
 }
 
 bool setKernelFramePointer() {
-	cl_int err = clSetKernelArg(compute::kernel, 0, sizeof(cl_mem), &outputFrame_computeImage);
+	cl_int err = clSetKernelArg(compute::kernel, 0, sizeof(cl_mem), &compute::outputFrame);
 	if (err != CL_SUCCESS) {
-		debuglogger::out << debuglogger::error << "failed to set outputFrame_computeImage pointer in kernel" << debuglogger::endl;
+		debuglogger::out << debuglogger::error << "failed to set compute::outputFrame pointer in kernel" << debuglogger::endl;
 		return true;
 	}
 	return false;
@@ -89,6 +89,14 @@ bool setKernelDefaultArgs() {
 		return true;
 	}
 	return false;
+}
+
+void updateKernelInterfaceMetadata() {
+	compute::globalSize[0] = windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize));
+	compute::globalSize[1] = windowHeight;
+	compute::localSize[0] = compute::kernelWorkGroupSize;
+	compute::frameRegion[0] = windowWidth;
+	compute::frameRegion[1] = windowHeight;
 }
 
 #define EXIT_FROM_THREAD POST_THREAD_EXIT goto releaseEverything;
@@ -122,12 +130,16 @@ void graphicsLoop(HWND hWnd) {
 		goto OpenCLRelease_all;
 	}
 
-	{
-		size_t computeGlobalSize[2] = { windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize)), windowHeight };
-		size_t computeLocalSize[2] = { compute::kernelWorkGroupSize, 1 };
-		size_t computeFrameOrigin[3] = { 0, 0, 0 };
-		size_t computeFrameRegion[3] = { windowWidth, windowHeight, 1 };
+	compute::localSize[1] = 1;
+	compute::frameOrigin[0] = 0;
+	compute::frameOrigin[1] = 0;
+	compute::frameOrigin[2] = 0;
+	compute::frameRegion[2] = 1;
+	updateKernelInterfaceMetadata();
 
+	Renderer renderer;
+
+	{
 		HDC finalG = GetDC(hWnd);
 		HBITMAP bmp = CreateCompatibleBitmap(finalG, windowWidth, windowHeight);
 		size_t outputFrame_size = windowWidth * windowHeight * 4;
@@ -136,15 +148,15 @@ void graphicsLoop(HWND hWnd) {
 		HBITMAP defaultBmp = (HBITMAP)SelectObject(g, bmp);
 
 		while (isAlive) {
-			cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, computeGlobalSize, computeLocalSize, 0, nullptr, nullptr);
+			cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, compute::globalSize, compute::localSize, 0, nullptr, nullptr);
 			if (err != CL_SUCCESS) {
 				debuglogger::out << debuglogger::error << "failed to enqueue compute kernel" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}
 
-			err = clEnqueueReadImage(compute::commandQueue, outputFrame_computeImage, true, computeFrameOrigin, computeFrameRegion, 0, 0, outputFrame, 0, nullptr, nullptr);
+			err = clEnqueueReadImage(compute::commandQueue, compute::outputFrame, true, compute::frameOrigin, compute::frameRegion, 0, 0, outputFrame, 0, nullptr, nullptr);
 			if (err != CL_SUCCESS) {
-				debuglogger::out << debuglogger::error << "failed to read outputFrame_computeImage from compute device" << debuglogger::endl;
+				debuglogger::out << debuglogger::error << "failed to read compute::outputFrame from compute device" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}
 			if (!SetBitmapBits(bmp, outputFrame_size, outputFrame)) {			// TODO: Replace this copy (which is unnecessary), with a direct access to the bitmap bits.
@@ -161,7 +173,7 @@ void graphicsLoop(HWND hWnd) {
 				windowHeight = newWindowHeight;
 
 				if (reallocateComputeFrameBuffer()) {
-					debuglogger::out << debuglogger::error << "failed to reallocate outputFrame_computeImage" << debuglogger::endl;
+					debuglogger::out << debuglogger::error << "failed to reallocate compute::outputFrame" << debuglogger::endl;
 					EXIT_FROM_THREAD;
 				}
 
@@ -176,12 +188,7 @@ void graphicsLoop(HWND hWnd) {
 				}
 
 				// Resize work group stuff.
-				computeGlobalSize[0] = windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize));
-				computeGlobalSize[1] = windowHeight;
-				computeLocalSize[0] = compute::kernelWorkGroupSize;
-				computeLocalSize[1] = 1;
-				computeFrameRegion[0] = windowWidth;
-				computeFrameRegion[1] = windowHeight;
+				updateKernelInterfaceMetadata();
 
 				// Resize GDI stuff.
 				SelectObject(g, defaultBmp);			// Deselect our bmp by replacing it with the defaultBmp that we got from above.
