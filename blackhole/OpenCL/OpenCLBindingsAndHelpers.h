@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>                                                                                  // Used for fixed-width types.
+#include <string>
 
 // These almost definitely only work in Windows, so if you ever want to port this to another system, these definitely need to change.
 #define CL_API_CALL _stdcall                                                                        // Calling covention for the OpenCL API calls.
@@ -85,9 +86,11 @@
 #endif*/
 
 // Custom OpenCL error code extentions for helper code return values. These extentions take up the positive space of the int32, since no other error codes (even other extentions) take up that space.
-#define CL_EXT_NO_PLATFORMS_FOUND					  1
-#define CL_EXT_NO_DEVICES_FOUND_ON_PLATFORM			  2
-#define CL_EXT_NO_DEVICES_FOUND						  3
+#define CL_EXT_INIT_FAILURE							  1
+#define CL_EXT_FREE_FAILURE							  2
+#define CL_EXT_NO_PLATFORMS_FOUND					  3
+#define CL_EXT_NO_DEVICES_FOUND_ON_PLATFORM			  4
+#define CL_EXT_NO_DEVICES_FOUND						  5
 
 #define CL_EXT_FAILED_TO_READ_SOURCE_FILE			  4
 #define CL_EXT_BUILD_FAILED_WITH_BUILD_LOG			  5
@@ -453,13 +456,13 @@ typedef cl_int (CL_API_CALL* clReleaseContext_func)(cl_context context);
 inline clReleaseContext_func clReleaseContext;
 
 // Simple helper function which initializes the dynamic linkage to the OpenCL DLL and initializes the bindings to all of the various functions.
-bool initOpenCLBindings();
+cl_int initOpenCLBindings();
 
 // Frees the OpenCL library from the current process.
-bool freeOpenCLLib();
+cl_int freeOpenCLLib();
 
 cl_int initOpenCLVarsForBestDevice(const char* targetPlatformVersion, cl_platform_id& bestPlatform, cl_device_id& bestDevice, cl_context& context, cl_command_queue& commandQueue);
 
 char* readFromSourceFile(const char* sourceFile);
 
-cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* sourceFile, const char* kernelName, cl_program& program, cl_kernel& kernel, size_t& kernelWorkGroupSize, char*& buildLog);
+cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* sourceFile, const char* kernelName, cl_program& program, cl_kernel& kernel, size_t& kernelWorkGroupSize, std::string& buildLog);

@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <stdlib.h>																									// This is included because we need access to _itoa.
+#include <string>
 
 DebugOutput& DebugOutput::operator<<(const char* input) {
 #ifndef _DEBUG
@@ -33,6 +34,13 @@ DebugOutput& DebugOutput::operator<<(char input) {
 	return *this;
 }
 
+DebugOutput& DebugOutput::operator<<(std::string& input) {
+#ifndef _DEBUG
+	return *this;
+#endif
+	OutputDebugStringA(input.c_str());
+	return *this;
+}
 
 DebugOutput& DebugOutput::operator<<(int32_t input) {
 #ifndef _DEBUG

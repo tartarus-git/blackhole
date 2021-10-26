@@ -8,10 +8,10 @@
 
 HMODULE DLLHandle;
 
-#define CHECK_FUNC_VALIDITY(func) if (!(func)) { FreeLibrary(DLLHandle); return false; }				// Simple helper define that reports error (returns false) if one of the functions doesn't bind correctly. Tries it's best to free OpenCL DLL before exiting.
-bool initOpenCLBindings() {
+#define CHECK_FUNC_VALIDITY(func) if (!(func)) { FreeLibrary(DLLHandle); return CL_EXT_INIT_FAILURE; }				// Simple helper define that reports error (returns false) if one of the functions doesn't bind correctly. Tries it's best to free OpenCL DLL before exiting.
+cl_int initOpenCLBindings() {
 	DLLHandle = LoadLibraryA("OpenCL.dll");																													// Load the OpenCL DLL.
-	if (!DLLHandle) { return false; }																														// If it doesn't load correctly, fail.
+	if (!DLLHandle) { return CL_EXT_INIT_FAILURE; }																														// If it doesn't load correctly, fail.
 
 	CHECK_FUNC_VALIDITY(clGetPlatformIDs = (clGetPlatformIDs_func)GetProcAddress(DLLHandle, "clGetPlatformIDs"));											// Go through all of the various functions and bind them (get function pointers to them and store those pointers in variables).
 	CHECK_FUNC_VALIDITY(clGetPlatformInfo = (clGetPlatformInfo_func)GetProcAddress(DLLHandle, "clGetPlatformInfo"));										// If any one of these binds fails, everything stops and the whole functions fails.
@@ -38,9 +38,11 @@ bool initOpenCLBindings() {
 	CHECK_FUNC_VALIDITY(clReleaseProgram = (clReleaseProgram_func)GetProcAddress(DLLHandle, "clReleaseProgram"));
 	CHECK_FUNC_VALIDITY(clReleaseCommandQueue = (clReleaseCommandQueue_func)GetProcAddress(DLLHandle, "clReleaseCommandQueue"));
 	CHECK_FUNC_VALIDITY(clReleaseContext = (clReleaseContext_func)GetProcAddress(DLLHandle, "clReleaseContext"));
+
+	return CL_SUCCESS;
 }
 
-bool freeOpenCLLib() { return FreeLibrary(DLLHandle); }
+cl_int freeOpenCLLib() { return FreeLibrary(DLLHandle) ? CL_SUCCESS : CL_EXT_FREE_FAILURE; }
 
 cl_int initOpenCLVarsForBestDevice(const char* targetPlatformVersion, cl_platform_id& bestPlatform, cl_device_id& bestDevice, cl_context& context, cl_command_queue& commandQueue) {
 	// Find the best device on the system.
@@ -131,7 +133,7 @@ char* readFromSourceFile(const char* sourceFile) {
 	return kernelSource;																																	// Returning a raw heap-initialized char array is potentially dangerous. The caller must delete the array.
 }
 
-cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* sourceFile, const char* kernelName, cl_program& program, cl_kernel& kernel, size_t& kernelWorkGroupSize, char*& buildLog) {
+cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* sourceFile, const char* kernelName, cl_program& program, cl_kernel& kernel, size_t& kernelWorkGroupSize, std::string& buildLog) {
 	cl_program cachedProgram;																																// We cache the values in case the compiler resorts to pointers instead of references. In that case, caching will be more efficient.
 	cl_kernel cachedKernel;
 	size_t cachedKernelWorkGroupSize;
@@ -151,14 +153,15 @@ cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* s
 			clReleaseProgram(cachedProgram);
 			return err;
 		}
-		buildLog = new char[buildLogSize];																													// Allocate some memory using the reference to the buildLog pointer.
-		err = clGetProgramBuildInfo(cachedProgram, device, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLog, nullptr);											// Get actual build log.
+		char* buildLogBuffer = new char[buildLogSize];
+		err = clGetProgramBuildInfo(cachedProgram, device, CL_PROGRAM_BUILD_LOG, buildLogSize, buildLogBuffer, nullptr);											// Get actual build log.
 		if (err != CL_SUCCESS) {
-			delete[] buildLog;
+			delete[] buildLogBuffer;
 			clReleaseProgram(cachedProgram);
 			return err;
 		}																																					// Don't delete build log if it is to be returned to caller because caller needs to use it. The caller is responsible for deleting it.
 		clReleaseProgram(cachedProgram);
+		buildLog = std::string(buildLogBuffer, buildLogSize - 1);
 		return CL_EXT_BUILD_FAILED_WITH_BUILD_LOG;
 	}
 

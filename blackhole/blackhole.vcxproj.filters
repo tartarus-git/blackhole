@@ -24,6 +24,9 @@
     <ClCompile Include="OpenCL\OpenCLBindingsAndHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OpenCL\specificHelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logging\debugOutput.h">
@@ -35,5 +38,11 @@
     <ClInclude Include="window\windowSetup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OpenCL\specificHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels\raytracer.cl" />
   </ItemGroup>
 </Project>
