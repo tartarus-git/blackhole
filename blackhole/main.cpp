@@ -8,7 +8,12 @@
 #include "logging/debugOutput.h"
 
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
+	switch (uMsg) {
+	default:
+		if (listenForResize(uMsg, wParam, lParam)) { return 0; }
+		if (listenForExitAttempts(uMsg, wParam, lParam)) { return 0; }
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
 unsigned int windowWidth;
@@ -17,7 +22,7 @@ unsigned int windowHeight;
 unsigned int newWindowWidth;
 unsigned int newWindowHeight;
 bool windowResized = false;
-void setWindowSize(unsigned int windowWidth, unsigned int windowHeight) {									// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
+void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
 	::newWindowWidth = newWindowWidth;																		// This is practically unavoidable without a little much effort. It's not really bad as long as it's just one time, so I'm going to leave it.
 	::newWindowHeight = newWindowHeight;
 	windowResized = true;
@@ -118,14 +123,39 @@ void graphicsLoop(HWND hWnd) {
 	}
 
 	{
+		size_t computeGlobalSize[2] = { windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize)), windowHeight };
+		size_t computeLocalSize[2] = { compute::kernelWorkGroupSize, 1 };
+		size_t computeFrameOrigin[3] = { 0, 0, 0 };
+		size_t computeFrameRegion[3] = { windowWidth, windowHeight, 1 };
+
 		HDC finalG = GetDC(hWnd);
 		HBITMAP bmp = CreateCompatibleBitmap(finalG, windowWidth, windowHeight);
 		size_t outputFrame_size = windowWidth * windowHeight * 4;
 		char* outputFrame = new char[outputFrame_size];
 		HDC g = CreateCompatibleDC(finalG);
+		HBITMAP defaultBmp = (HBITMAP)SelectObject(g, bmp);
 
-		while (true) {
-			// TODO: Implement main loop.
+		while (isAlive) {
+			cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, computeGlobalSize, computeLocalSize, 0, nullptr, nullptr);
+			if (err != CL_SUCCESS) {
+				debuglogger::out << debuglogger::error << "failed to enqueue compute kernel" << debuglogger::endl;
+				EXIT_FROM_THREAD;
+			}
+
+			err = clEnqueueReadImage(compute::commandQueue, outputFrame_computeImage, true, computeFrameOrigin, computeFrameRegion, 0, 0, outputFrame, 0, nullptr, nullptr);
+			if (err != CL_SUCCESS) {
+				debuglogger::out << debuglogger::error << "failed to read outputFrame_computeImage from compute device" << debuglogger::endl;
+				EXIT_FROM_THREAD;
+			}
+			if (!SetBitmapBits(bmp, outputFrame_size, outputFrame)) {			// TODO: Replace this copy (which is unnecessary), with a direct access to the bitmap bits.
+				debuglogger::out << debuglogger::error << "failed to set bmp bits" << debuglogger::endl;
+				EXIT_FROM_THREAD;
+			}
+			if (!BitBlt(finalG, 0, 0, windowWidth, windowHeight, g, 0, 0, SRCCOPY)) {
+				debuglogger::out << debuglogger::error << "failed to copy g into finalG" << debuglogger::endl;
+				EXIT_FROM_THREAD;
+			}
+
 			if (windowResized) {
 				windowWidth = newWindowWidth;
 				windowHeight = newWindowHeight;
@@ -145,8 +175,22 @@ void graphicsLoop(HWND hWnd) {
 					EXIT_FROM_THREAD;
 				}
 
-				// TODO: Do global and local resizing stuff here.
-				// TODO: Do reinitializing necessary GDI things here.
+				// Resize work group stuff.
+				computeGlobalSize[0] = windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize));
+				computeGlobalSize[1] = windowHeight;
+				computeLocalSize[0] = compute::kernelWorkGroupSize;
+				computeLocalSize[1] = 1;
+				computeFrameRegion[0] = windowWidth;
+				computeFrameRegion[1] = windowHeight;
+
+				// Resize GDI stuff.
+				SelectObject(g, defaultBmp);			// Deselect our bmp by replacing it with the defaultBmp that we got from above.
+				DeleteObject(bmp);
+				bmp = CreateCompatibleBitmap(finalG, windowWidth, windowHeight);
+				SelectObject(g, bmp);
+				delete[] outputFrame;
+				outputFrame_size = windowWidth * windowHeight * 4;
+				outputFrame = new char[outputFrame_size];
 
 				windowResized = false;
 			}

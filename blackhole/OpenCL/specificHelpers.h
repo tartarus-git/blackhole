@@ -4,16 +4,16 @@
 #include <string>
 
 namespace compute {
-	cl_platform_id platform;
-	cl_device_id device;
-	cl_context context;
-	cl_command_queue commandQueue;
+	inline cl_platform_id platform;
+	inline cl_device_id device;
+	inline cl_context context;
+	inline cl_command_queue commandQueue;
 
 	cl_int releaseContextVars();
 
-	cl_program program;
-	cl_kernel kernel;
-	size_t kernelWorkGroupSize;
+	inline cl_program program;
+	inline cl_kernel kernel;
+	inline size_t kernelWorkGroupSize;
 
 	cl_int releaseKernelVars();
 

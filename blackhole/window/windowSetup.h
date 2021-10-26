@@ -11,8 +11,24 @@ std::thread graphicsThread;
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void setWindowSize(unsigned int windowWidth, unsigned int windowHeight);
 
+bool isAlive = true;
 #define POST_THREAD_EXIT if (!PostMessage(hWnd, UWM_EXIT_FROM_THREAD, 0, 0)) { debuglogger::out << debuglogger::error << "failed to post UWM_EXIT_FROM_THREAD message to window queue" << debuglogger::endl; }
 void graphicsLoop(HWND hWnd);
+
+bool listenForExitAttempts(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_DESTROY:
+		isAlive = false;
+		graphicsThread.join();
+		PostQuitMessage(EXIT_SUCCESS);
+		return true;
+	case UWM_EXIT_FROM_THREAD:
+		graphicsThread.join();
+		PostQuitMessage(EXIT_SUCCESS);
+		return true;
+	}
+	return false;
+}
 
 bool windowMaximized = false;
 unsigned int tempWindowWidth;

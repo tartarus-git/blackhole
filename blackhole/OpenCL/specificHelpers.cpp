@@ -4,7 +4,7 @@
 
 namespace compute {
 	cl_int releaseContextVars() {
-		cl_int err = clReleaseCommandQueue(commandQueue);		// TODO: Understand why this works with the definitions of commandQueue and such in the header. Shouldn't there be some inline stuff we have to do because of multiple definition when using the header in other files.
+		cl_int err = clReleaseCommandQueue(commandQueue);
 		if (err != CL_SUCCESS) { return err; }
 		err = clReleaseContext(context);
 		if (err != CL_SUCCESS) { return err; }
@@ -24,10 +24,10 @@ namespace compute {
 		if (err != CL_SUCCESS) { return err; }
 
 		// TODO: Consider making a system where a platform is selected if it's version is at least the version given here through parameters. Would that work?
-		cl_int err = initOpenCLVarsForBestDevice("OpenCL 3.0 ", platform, device, context, commandQueue);
+		err = initOpenCLVarsForBestDevice("OpenCL 3.0 ", platform, device, context, commandQueue);
 		if (err != CL_SUCCESS) { freeOpenCLLib(); return err; }
 
-		err = setupComputeKernel(context, device, "raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);				// TODO: Make sure this is in a released state when it fails as a qaruantee.
+		err = setupComputeKernel(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);				// TODO: Make sure this is in a released state when it fails as a qaruantee.
 		if (err != CL_SUCCESS) { releaseContextVars(); freeOpenCLLib(); return err; }
 	}
 
