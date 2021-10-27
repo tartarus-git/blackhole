@@ -71,6 +71,9 @@
     <ClInclude Include="objects\Blackhole.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="math\constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="kernels\raytracer.cl" />

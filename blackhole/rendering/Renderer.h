@@ -10,8 +10,8 @@
 class Renderer
 {
 public:
-	unsigned int windowWidth;
-	unsigned int windowHeight;
+	unsigned int windowWidth;				// TODO: This is useless for now, but maybe only for now, which is why it's still here.
+	unsigned int windowHeight;				// TODO: I might want to move stuff in this class which depends on the window size.
 	void setWindowSize(unsigned int windowWidth, unsigned int windowHeight);
 
 	Camera camera;
@@ -20,10 +20,13 @@ public:
 
 	Blackhole blackhole;
 
+	Vector3f rayOrigin;
+	void updateRayOrigin();
+
 	bool updateKernelArgs();
 
 	cl_int render(char* outputFrame);
 	
-	Renderer() = default;		// TODO: Figure out how this works.
+	Renderer() = default;
 };
 

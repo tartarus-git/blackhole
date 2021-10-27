@@ -24,8 +24,8 @@ namespace compute {
 
 	inline cl_mem outputFrame;
 
-	size_t globalSize[2];
-	size_t localSize[2];
-	size_t frameOrigin[3];
-	size_t frameRegion[3];
+	inline size_t globalSize[2];
+	inline size_t localSize[2];
+	inline size_t frameOrigin[3];
+	inline size_t frameRegion[3];
 }

@@ -9,8 +9,26 @@
 
 #include "logging/debugOutput.h"
 
+#define FOV 90
+
+Renderer renderer;
+
+bool captureMouse = false;
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
+	case WM_MOUSEMOVE:
+		if (captureMouse) {
+			unsigned int posX = LOWORD(lParam);			// TODO: Understand why this can break on systems with multiple monitors. Doesn't make sense to me just yet.
+			unsigned int posY = HIWORD(lParam);
+			renderer.camera.rot.x += posX - renderer.windowWidth / 2;
+			renderer.camera.rot.y += posY - renderer.windowHeight / 2;
+			// TODO: Reset cursor position to middle of client area.
+			// TODO: This whole process that we're doing here is not thread safe, your going to have to write most of it again.
+		}
+	case WM_KEYDOWN:				// TODO: This can break everything if you press it before captureMouse is set to true for the first time, remake the system so that it works.
+		if (wParam == VK_ESCAPE) {
+			captureMouse = !captureMouse;
+		}
 	default:
 		if (listenForResize(uMsg, wParam, lParam)) { return 0; }
 		if (listenForExitAttempts(uMsg, wParam, lParam)) { return 0; }
@@ -137,7 +155,20 @@ void graphicsLoop(HWND hWnd) {
 	compute::frameRegion[2] = 1;
 	updateKernelInterfaceMetadata();
 
-	Renderer renderer;
+	renderer.setWindowSize(windowWidth, windowHeight);
+
+	renderer.camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
+	renderer.updateRayOrigin();
+	renderer.skybox = Skybox();
+	renderer.blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
+
+	captureMouse = true;
+
+	if (!renderer.updateKernelArgs()) {
+		debuglogger::out << debuglogger::error << "failed to update renderer kernel args" << debuglogger::endl;
+		POST_THREAD_EXIT;
+		goto OpenCLRelease_all;
+	}
 
 	{
 		HDC finalG = GetDC(hWnd);
@@ -148,17 +179,12 @@ void graphicsLoop(HWND hWnd) {
 		HBITMAP defaultBmp = (HBITMAP)SelectObject(g, bmp);
 
 		while (isAlive) {
-			cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, compute::globalSize, compute::localSize, 0, nullptr, nullptr);
+			cl_int err = renderer.render(outputFrame);
 			if (err != CL_SUCCESS) {
-				debuglogger::out << debuglogger::error << "failed to enqueue compute kernel" << debuglogger::endl;
+				debuglogger::out << debuglogger::error << "failed to render scene" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}
 
-			err = clEnqueueReadImage(compute::commandQueue, compute::outputFrame, true, compute::frameOrigin, compute::frameRegion, 0, 0, outputFrame, 0, nullptr, nullptr);
-			if (err != CL_SUCCESS) {
-				debuglogger::out << debuglogger::error << "failed to read compute::outputFrame from compute device" << debuglogger::endl;
-				EXIT_FROM_THREAD;
-			}
 			if (!SetBitmapBits(bmp, outputFrame_size, outputFrame)) {			// TODO: Replace this copy (which is unnecessary), with a direct access to the bitmap bits.
 				debuglogger::out << debuglogger::error << "failed to set bmp bits" << debuglogger::endl;
 				EXIT_FROM_THREAD;
