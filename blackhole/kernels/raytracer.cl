@@ -70,7 +70,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 
     // Rotate ray and rayOrigin based on camera look direction.
     float cameraCosX = cos(camera.rot.x);
-    float cameraSinX = sin(camera.rot.y);
+    float cameraSinX = sin(camera.rot.x);
 
     rayOrigin.x = cameraCosX * rayOrigin.x - cameraSinX * rayOrigin.y;
     rayOrigin.y = cameraSinX * rayOrigin.x + cameraCosX * rayOrigin.y;
