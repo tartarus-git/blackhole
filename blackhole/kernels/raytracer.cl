@@ -103,20 +103,20 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
     Vector3f rayCopy = ray;
     Vector3f rayOriginCopy = rayOrigin;
 
-    rayOrigin.x = cameraCosX * rayOriginCopy.x - cameraSinX * rayOriginCopy.z;
-    rayOrigin.z = cameraSinX * rayOriginCopy.x + cameraCosX * rayOriginCopy.z;
-
-    ray.x = cameraCosX * rayCopy.x - cameraSinX * rayCopy.z;
-    ray.z = cameraSinX * rayCopy.x + cameraCosX * rayCopy.z;
-
-    rayOriginCopy = rayOrigin;
-    rayCopy = ray;
-
     rayOrigin.z = cameraCosY * rayOriginCopy.z - cameraSinY * rayOriginCopy.y;
     rayOrigin.y = cameraSinY * rayOriginCopy.z + cameraCosY * rayOriginCopy.y;
 
     ray.z = cameraCosY * rayCopy.z - cameraSinY * rayCopy.y;
     ray.y = cameraSinY * rayCopy.z + cameraCosY * rayCopy.y;
+    
+    rayOriginCopy = rayOrigin;
+    rayCopy = ray;
+    
+    rayOrigin.x = cameraCosX * rayOriginCopy.x - cameraSinX * rayOriginCopy.z;
+    rayOrigin.z = cameraSinX * rayOriginCopy.x + cameraCosX * rayOriginCopy.z;
+
+    ray.x = cameraCosX * rayCopy.x - cameraSinX * rayCopy.z;
+    ray.z = cameraSinX * rayCopy.x + cameraCosX * rayCopy.z;
 
     ray.x -= rayOrigin.x;
     ray.y -= rayOrigin.y;

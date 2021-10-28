@@ -64,8 +64,8 @@ void Renderer::requestCameraRot(int mouseMoveX, int mouseMoveY) {
 
 bool Renderer::doRequestedCameraRot() {
 	if (cameraRotRequested) {
-		camera.rot.x += requestedCameraRotX;
-		camera.rot.y += requestedCameraRotY;
+		camera.rot.x -= requestedCameraRotX;
+		camera.rot.y -= requestedCameraRotY;
 		if (!updateKernelCameraArg()) { return false; }				// Update the camera in the kernel so that the kernel has new rot information.
 		cameraRotRequested = false;
 	}
