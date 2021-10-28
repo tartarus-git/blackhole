@@ -11,23 +11,28 @@
 
 #define FOV 90
 
+#define LOOK_SENSITIVITY_X 1
+#define LOOK_SENSITIVITY_Y 1
+
+unsigned int halfWindowWidth;
+unsigned int halfWindowHeight;
+int absHalfWindowWidth;
+int absHalfWindowHeight;
+
 Renderer renderer;
 
 bool captureMouse = false;
+bool captureKeyboard = false;
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_MOUSEMOVE:
 		if (captureMouse) {
-			unsigned int posX = LOWORD(lParam);			// TODO: Understand why this can break on systems with multiple monitors. Doesn't make sense to me just yet.
-			unsigned int posY = HIWORD(lParam);
-			renderer.camera.rot.x += posX - renderer.windowWidth / 2;
-			renderer.camera.rot.y += posY - renderer.windowHeight / 2;
-			// TODO: Reset cursor position to middle of client area.
-			// TODO: This whole process that we're doing here is not thread safe, your going to have to write most of it again.
+			renderer.requestCameraRot(LOWORD(lParam) - halfWindowWidth, HIWORD(lParam) - halfWindowHeight);
+			SetCursorPos(absHalfWindowWidth, absHalfWindowHeight);		// Set cursor back to middle of window.
 		}
-	case WM_KEYDOWN:				// TODO: This can break everything if you press it before captureMouse is set to true for the first time, remake the system so that it works.
-		if (wParam == VK_ESCAPE) {
-			captureMouse = !captureMouse;
+	case WM_KEYDOWN:
+		if (captureKeyboard) {
+			if (wParam == VK_ESCAPE) { captureMouse = !captureMouse; }
 		}
 	default:
 		if (listenForResize(uMsg, wParam, lParam)) { return 0; }
@@ -36,16 +41,32 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+HWND hWnd;
+
 unsigned int windowWidth;
 unsigned int windowHeight;
 
 unsigned int newWindowWidth;
 unsigned int newWindowHeight;
 bool windowResized = false;
-void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
+void setWindow(WindowSetMode, int x, int y) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
 	::newWindowWidth = newWindowWidth;																		// This is practically unavoidable without a little much effort. It's not really bad as long as it's just one time, so I'm going to leave it.
 	::newWindowHeight = newWindowHeight;
+
+	// Calculate screen coords of middle of window for cursor repositioning.
+	halfWindowWidth = newWindowWidth / 2;
+	halfWindowHeight = newWindowHeight / 2;
+	POINT position = { halfWindowWidth, halfWindowHeight };
+	ClientToScreen(hWnd, &position);
+	absHalfWindowWidth = position.x;
+	absHalfWindowHeight = position.y;
+
 	windowResized = true;
+}
+
+void updateActualWindowSize() {
+	windowWidth = newWindowWidth;
+	windowHeight = newWindowHeight;
 }
 
 const cl_image_format computeOutputFrameFormat = { CL_RGBA, CL_UNSIGNED_INT8 };
@@ -120,8 +141,9 @@ void updateKernelInterfaceMetadata() {
 #define EXIT_FROM_THREAD POST_THREAD_EXIT goto releaseEverything;
 
 void graphicsLoop(HWND hWnd) {
-	windowWidth = newWindowWidth;
-	windowHeight = newWindowHeight;
+	::hWnd = hWnd;
+
+	updateActualWindowSize();
 	windowResized = false;
 
 	std::string buildLog;
@@ -158,11 +180,10 @@ void graphicsLoop(HWND hWnd) {
 	renderer.setWindowSize(windowWidth, windowHeight);
 
 	renderer.camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
-	renderer.updateRayOrigin();
+	renderer.calculateRayOrigin(FOV);
+	renderer.setCameraRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
 	renderer.skybox = Skybox();
 	renderer.blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
-
-	captureMouse = true;
 
 	if (!renderer.updateKernelArgs()) {
 		debuglogger::out << debuglogger::error << "failed to update renderer kernel args" << debuglogger::endl;
@@ -177,6 +198,9 @@ void graphicsLoop(HWND hWnd) {
 		char* outputFrame = new char[outputFrame_size];
 		HDC g = CreateCompatibleDC(finalG);
 		HBITMAP defaultBmp = (HBITMAP)SelectObject(g, bmp);
+
+		captureMouse = true;
+		captureKeyboard = true;
 
 		while (isAlive) {
 			cl_int err = renderer.render(outputFrame);
@@ -195,8 +219,7 @@ void graphicsLoop(HWND hWnd) {
 			}
 
 			if (windowResized) {
-				windowWidth = newWindowWidth;
-				windowHeight = newWindowHeight;
+				updateActualWindowSize();
 
 				if (reallocateComputeFrameBuffer()) {
 					debuglogger::out << debuglogger::error << "failed to reallocate compute::outputFrame" << debuglogger::endl;
@@ -226,6 +249,11 @@ void graphicsLoop(HWND hWnd) {
 				outputFrame = new char[outputFrame_size];
 
 				windowResized = false;
+			}
+
+			if (!renderer.doRequestedCameraRot()) {
+				debuglogger::out << debuglogger::error << "failed to do requested camera rot" << debuglogger::endl;
+				EXIT_FROM_THREAD;
 			}
 		}
 

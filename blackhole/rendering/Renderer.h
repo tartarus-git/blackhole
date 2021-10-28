@@ -21,12 +21,24 @@ public:
 	Blackhole blackhole;
 
 	Vector3f rayOrigin;
-	void updateRayOrigin();
+	void calculateRayOrigin(float FOV);
 
+	Renderer() = default;
+
+	bool updateKernelCameraArg();
 	bool updateKernelArgs();
 
+	float cameraRotSensitivityX;
+	float cameraRotSensitivityY;
+	void setCameraRotSensitivity(float x, float y);
+
+	float requestedCameraRotX;
+	float requestedCameraRotY;
+	bool cameraRotRequested = false;
+	void requestCameraRot(int mouseMoveX, int mouseMoveY);
+
+	bool doRequestedCameraRot();
+
 	cl_int render(char* outputFrame);
-	
-	Renderer() = default;
 };
 

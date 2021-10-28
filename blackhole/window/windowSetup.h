@@ -9,7 +9,21 @@
 std::thread graphicsThread;
 
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void setWindowSize(unsigned int windowWidth, unsigned int windowHeight);
+
+struct WindowBounds {
+	static int absWindowX;
+	static int absWindowY;
+	static unsigned int windowWidth;
+	static unsigned int windowHeight;
+};
+enum class WindowBoundsMode { pos = 1, size };
+void setWindowBounds(WindowBoundsMode mode);
+
+void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {
+	WindowBounds::windowWidth = newWindowWidth;
+	WindowBounds::windowHeight = newWindowHeight;
+	setWindowBounds(WindowBoundsMode::size);
+}
 
 bool isAlive = true;
 #define POST_THREAD_EXIT if (!PostMessage(hWnd, UWM_EXIT_FROM_THREAD, 0, 0)) { debuglogger::out << debuglogger::error << "failed to post UWM_EXIT_FROM_THREAD message to window queue" << debuglogger::endl; }

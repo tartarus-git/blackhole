@@ -14,10 +14,17 @@ void Renderer::setWindowSize(unsigned int windowWidth, unsigned int windowHeight
 	this->windowHeight = windowHeight;
 }
 
-bool Renderer::updateKernelArgs() {			// TODO: This would be a good thing to totally make simpler through a C++ lib for OpenCL that you could make.
+// Figure out a way to just update what you need inside of the camera. Even if it means splitting it open as more than one arg.
+bool Renderer::updateKernelCameraArg() {
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Camera), &(this->camera));// TODO: These parens are unnecessary.
 	if (err != CL_SUCCESS) { return false; }
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Vector3f), &this->rayOrigin);
+	return true;
+}
+
+// TODO: Obviously move all this around to reflect the order in the header file.
+bool Renderer::updateKernelArgs() {			// TODO: This would be a good thing to totally make simpler through a C++ lib for OpenCL that you could make.
+	if (!updateKernelCameraArg()) { return false; }
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Vector3f), &this->rayOrigin);
 	if (err != CL_SUCCESS) { return false; }
 	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(Skybox), &(this->skybox));
 	if (err != CL_SUCCESS) { return false; }
@@ -26,12 +33,35 @@ bool Renderer::updateKernelArgs() {			// TODO: This would be a good thing to tot
 	return true;
 }
 
-void Renderer::updateRayOrigin() {
-	float rawDist = 0.5f / tan(camera.FOV / 180 * constants::pi / 2);
+void Renderer::calculateRayOrigin(float FOV) {
+	float rawDist = 0.5f / tan(FOV / 180 * constants::pi / 2);		// TODO: Make sure this is as efficient as it can be. Division avoidable?
 	int refDim;
 	if (windowWidth > windowHeight) { refDim = windowHeight; }
 	else { refDim = windowWidth; }
 	rayOrigin = Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, camera.nearPlane + rawDist * refDim);
+}
+
+void Renderer::setCameraRotSensitivity(float x, float y) {
+	cameraRotSensitivityX = x;
+	cameraRotSensitivityY = y;
+}
+
+void Renderer::requestCameraRot(int mouseMoveX, int mouseMoveY) {
+	if (cameraRotRequested) { return; }							// If there is already one requested, you have to wait until that one is processed before requesting a new one.
+	requestedCameraRotX = mouseMoveX * cameraRotSensitivityX;
+	requestedCameraRotY = mouseMoveY * cameraRotSensitivityY;
+	cameraRotRequested = true;
+}
+
+bool Renderer::doRequestedCameraRot() {
+	if (cameraRotRequested) {
+		camera.rot.x += requestedCameraRotX;
+		camera.rot.y += requestedCameraRotY;
+		if (!updateKernelCameraArg()) { return false; }				// Update the camera in the kernel so that the kernel has new rot information.
+		cameraRotRequested = false;
+	}
+
+	return true;
 }
 
 cl_int Renderer::render(char* outputFrame) {

@@ -8,11 +8,9 @@ public:
 	Vector3f pos;
 	Vector3f rot;
 	
-	float FOV;
-
 	float nearPlane;
 
 	Camera() = default;
-	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), FOV(FOV), nearPlane(nearPlane) { }
+	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), nearPlane(nearPlane) { }
 };
 
