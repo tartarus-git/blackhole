@@ -67,6 +67,17 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
     rayOrigin.y = 0;            // TODO: This is necessary because the host is populating the data wrong, fix that.
     Vector3f ray = vec3Sub(coords3D, rayOrigin);
     ray = vec3Normalize(ray);
+
+    // Rotate ray and rayOrigin based on camera look direction.
+    float cameraCosX = cos(camera.rot.x);
+    float cameraSinX = sin(camera.rot.y);
+
+    rayOrigin.x = cameraCosX * rayOrigin.x - cameraSinX * rayOrigin.y;
+    rayOrigin.y = cameraSinX * rayOrigin.x + cameraCosX * rayOrigin.y;
+
+    ray.x = cameraCosX * ray.x - cameraSinX * ray.y;
+    ray.y = cameraSinX * ray.x + cameraCosX * ray.y;
+
     uint3 color = skyboxSample(skybox, ray);
     write_imageui(outputFrame, coords, (uint4)(color.x, color.y, color.z, 255));
 }

@@ -2,32 +2,79 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <windowsx.h>
+
 #include "logging/debugOutput.h"
 #include <thread>
 
-#define UWM_EXIT_FROM_THREAD WM_USER
-std::thread graphicsThread;
+void setWindowPos(int newPosX, int newPosY);
+void setWindowSize(unsigned int newWidth, unsigned int newHeight);
+void setWindow(int newPosX, int newPosY, unsigned int newWidth, unsigned int newHeight);
 
-LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+int tempWindowPosX;
+int tempWindowPosY;
+bool tempWindowPosUpdated = false;
 
-struct WindowBounds {
-	static int absWindowX;
-	static int absWindowY;
-	static unsigned int windowWidth;
-	static unsigned int windowHeight;
-};
-enum class WindowBoundsMode { pos = 1, size };
-void setWindowBounds(WindowBoundsMode mode);
-
-void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {
-	WindowBounds::windowWidth = newWindowWidth;
-	WindowBounds::windowHeight = newWindowHeight;
-	setWindowBounds(WindowBoundsMode::size);
+bool windowMaximized = false;
+unsigned int tempWindowWidth;
+unsigned int tempWindowHeight;
+bool tempWindowSizesUpdated = false;
+bool listenForBoundsChange(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_MOVE:
+		tempWindowPosX = GET_X_LPARAM(lParam);
+		tempWindowPosY = GET_Y_LPARAM(lParam);
+		tempWindowPosUpdated = true;
+		return true;
+	case WM_SIZE:
+		switch (wParam) {
+		case SIZE_RESTORED:
+			if (windowMaximized) {
+				setWindowSize(LOWORD(lParam), HIWORD(lParam));
+				windowMaximized = false;
+				return true;
+			}
+			tempWindowWidth = LOWORD(lParam);
+			tempWindowHeight = HIWORD(lParam);
+			tempWindowSizesUpdated = true;
+			return true;
+		case SIZE_MAXIMIZED:
+			setWindowSize(LOWORD(lParam), HIWORD(lParam));
+			windowMaximized = true;
+			tempWindowSizesUpdated = false;
+			return true;
+		}
+		return false;
+	case WM_EXITSIZEMOVE:
+		if (tempWindowPosUpdated) {
+			if (tempWindowSizesUpdated) {
+				setWindow(tempWindowPosX, tempWindowPosY, tempWindowWidth, tempWindowHeight);
+				tempWindowPosUpdated = false;
+				tempWindowSizesUpdated = false;
+				return true;
+			}
+			setWindowPos(tempWindowPosX, tempWindowPosY);
+			tempWindowPosUpdated = false;
+			return true;
+		}
+		if (tempWindowSizesUpdated) {
+			if (tempWindowPosUpdated) {
+				setWindow(tempWindowPosX, tempWindowPosY, tempWindowWidth, tempWindowHeight);
+				tempWindowPosUpdated = false;
+				tempWindowSizesUpdated = false;
+				return true;
+			}
+			setWindowSize(tempWindowWidth, tempWindowHeight);
+			tempWindowSizesUpdated = false;
+			return true;
+		}
+	}
+	return false;
 }
 
+#define UWM_EXIT_FROM_THREAD WM_USER
 bool isAlive = true;
-#define POST_THREAD_EXIT if (!PostMessage(hWnd, UWM_EXIT_FROM_THREAD, 0, 0)) { debuglogger::out << debuglogger::error << "failed to post UWM_EXIT_FROM_THREAD message to window queue" << debuglogger::endl; }
-void graphicsLoop(HWND hWnd);
+std::thread graphicsThread;
 
 bool listenForExitAttempts(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
@@ -44,40 +91,10 @@ bool listenForExitAttempts(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	return false;
 }
 
-bool windowMaximized = false;
-unsigned int tempWindowWidth;
-unsigned int tempWindowHeight;
-bool tempWindowSizesUpdated = false;
-bool listenForResize(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	switch (uMsg) {
-		case WM_SIZE:
-			switch (wParam) {
-			case SIZE_RESTORED:
-				if (windowMaximized) {
-					setWindowSize(LOWORD(lParam), HIWORD(lParam));
-					windowMaximized = false;
-					return true;
-				}
-				tempWindowWidth = LOWORD(lParam);
-				tempWindowHeight = HIWORD(lParam);
-				tempWindowSizesUpdated = true;
-				return true;
-			case SIZE_MAXIMIZED:
-				setWindowSize(LOWORD(lParam), HIWORD(lParam));
-				windowMaximized = true;
-				tempWindowSizesUpdated = false;
-				return true;
-			}
-			return true;
-		case WM_EXITSIZEMOVE:
-			if (tempWindowSizesUpdated) {
-				setWindowSize(tempWindowWidth, tempWindowHeight);
-				tempWindowSizesUpdated = false;
-			}
-			return true;
-	}
-	return false;
-}
+LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+#define POST_THREAD_EXIT if (!PostMessage(hWnd, UWM_EXIT_FROM_THREAD, 0, 0)) { debuglogger::out << debuglogger::error << "failed to post UWM_EXIT_FROM_THREAD message to window queue" << debuglogger::endl; }
+void graphicsLoop(HWND hWnd);
 
 #ifdef UNICODE
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, wchar_t* lpCmdLine, int nCmdShow) {
@@ -110,10 +127,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine
 
 	RECT clientRect;
 	if (!GetClientRect(hWnd, &clientRect)) {
-		debuglogger::out << debuglogger::error << "failed to get client bounds" << debuglogger::endl;
+		debuglogger::out << debuglogger::error << "failed to get client size" << debuglogger::endl;
 		return EXIT_FAILURE;
 	}
-	setWindowSize(clientRect.right, clientRect.bottom);
+	POINT clientPos = { 0, 0 };
+	if (!ClientToScreen(hWnd, &clientPos)) {
+		debuglogger::out << debuglogger::error << "failed to get client pos in screen coords" << debuglogger::endl;
+		return EXIT_FAILURE;
+	}
+	setWindow(clientPos.x, clientPos.y, clientRect.right, clientRect.bottom);
 
 	debuglogger::out << "starting graphics thread..." << debuglogger::endl;
 	graphicsThread = std::thread(graphicsLoop, hWnd);

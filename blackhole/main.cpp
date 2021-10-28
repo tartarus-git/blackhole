@@ -11,8 +11,8 @@
 
 #define FOV 90
 
-#define LOOK_SENSITIVITY_X 1
-#define LOOK_SENSITIVITY_Y 1
+#define LOOK_SENSITIVITY_X 0.01f
+#define LOOK_SENSITIVITY_Y 0.01f
 
 unsigned int halfWindowWidth;
 unsigned int halfWindowHeight;
@@ -30,12 +30,15 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			renderer.requestCameraRot(LOWORD(lParam) - halfWindowWidth, HIWORD(lParam) - halfWindowHeight);
 			SetCursorPos(absHalfWindowWidth, absHalfWindowHeight);		// Set cursor back to middle of window.
 		}
+		return 0;
 	case WM_KEYDOWN:
 		if (captureKeyboard) {
-			if (wParam == VK_ESCAPE) { captureMouse = !captureMouse; }
+			// TODO: Make following into switch case when you add more keys.
+			if (wParam == VK_ESCAPE) { captureMouse = !captureMouse; return 0; }
 		}
+		break;
 	default:
-		if (listenForResize(uMsg, wParam, lParam)) { return 0; }
+		if (listenForBoundsChange(uMsg, wParam, lParam)) { return 0; }
 		if (listenForExitAttempts(uMsg, wParam, lParam)) { return 0; }
 	}
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -43,25 +46,39 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 HWND hWnd;
 
+int newWindowX;
+int newWindowY;
+
 unsigned int windowWidth;
 unsigned int windowHeight;
 
 unsigned int newWindowWidth;
 unsigned int newWindowHeight;
 bool windowResized = false;
-void setWindow(WindowSetMode, int x, int y) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
+void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
 	::newWindowWidth = newWindowWidth;																		// This is practically unavoidable without a little much effort. It's not really bad as long as it's just one time, so I'm going to leave it.
 	::newWindowHeight = newWindowHeight;
-
-	// Calculate screen coords of middle of window for cursor repositioning.
+	windowResized = true;
 	halfWindowWidth = newWindowWidth / 2;
 	halfWindowHeight = newWindowHeight / 2;
-	POINT position = { halfWindowWidth, halfWindowHeight };
-	ClientToScreen(hWnd, &position);
-	absHalfWindowWidth = position.x;
-	absHalfWindowHeight = position.y;
 
-	windowResized = true;
+	// Calculate screen coords of middle of window for cursor repositioning.
+	absHalfWindowWidth = newWindowX + halfWindowWidth;
+	absHalfWindowHeight = newWindowY + halfWindowHeight;
+}
+
+void setWindowPos(int newWindowX, int newWindowY) {
+	::newWindowX = newWindowX;
+	::newWindowY = newWindowY;
+
+	// Calculate screen coords of middle of window for cursor repositioning.
+	absHalfWindowWidth = newWindowX + halfWindowWidth;
+	absHalfWindowHeight = newWindowY + halfWindowHeight;
+}
+
+void setWindow(int newWindowX, int newWindowY, unsigned int newWindowWidth, unsigned int newWindowHeight) {
+	setWindowSize(newWindowWidth, newWindowHeight);
+	setWindowPos(newWindowX, newWindowY);
 }
 
 void updateActualWindowSize() {
@@ -180,13 +197,14 @@ void graphicsLoop(HWND hWnd) {
 	renderer.setWindowSize(windowWidth, windowHeight);
 
 	renderer.camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
-	renderer.calculateRayOrigin(FOV);
+	renderer.calculateRayOriginRawDist(FOV);
+	renderer.calculateRayOrigin();
 	renderer.setCameraRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
 	renderer.skybox = Skybox();
 	renderer.blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
 
 	if (!renderer.updateKernelArgs()) {
-		debuglogger::out << debuglogger::error << "failed to update renderer kernel args" << debuglogger::endl;
+		debuglogger::out << debuglogger::error << "failed to set renderer kernel args" << debuglogger::endl;
 		POST_THREAD_EXIT;
 		goto OpenCLRelease_all;
 	}
@@ -236,8 +254,18 @@ void graphicsLoop(HWND hWnd) {
 					EXIT_FROM_THREAD;
 				}
 
+				// Put new window size in renderer.
+				renderer.setWindowSize(windowWidth, windowHeight);
+
 				// Resize work group stuff.
 				updateKernelInterfaceMetadata();
+
+				// Reposition ray origin.
+				renderer.calculateRayOrigin();
+				if (!renderer.updateKernelRayOriginArg()) {
+					debuglogger::out << debuglogger::error << "failed to update kernel ray origin arg" << debuglogger::endl;
+					EXIT_FROM_THREAD;
+				}
 
 				// Resize GDI stuff.
 				SelectObject(g, defaultBmp);			// Deselect our bmp by replacing it with the defaultBmp that we got from above.
@@ -249,6 +277,7 @@ void graphicsLoop(HWND hWnd) {
 				outputFrame = new char[outputFrame_size];
 
 				windowResized = false;
+				continue;
 			}
 
 			if (!renderer.doRequestedCameraRot()) {

@@ -20,12 +20,15 @@ public:
 
 	Blackhole blackhole;
 
+	float rayOriginRawDist;
 	Vector3f rayOrigin;
-	void calculateRayOrigin(float FOV);
+	void calculateRayOriginRawDist(float FOV);			// TODO: Maybe come up with better name or something, idk. Also make it maybe so that you don't always have to call both of these functions. Maybe make another one which combines both or something.
+	void calculateRayOrigin();
 
 	Renderer() = default;
 
 	bool updateKernelCameraArg();
+	bool updateKernelRayOriginArg();
 	bool updateKernelArgs();
 
 	float cameraRotSensitivityX;

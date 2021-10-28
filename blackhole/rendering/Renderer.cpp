@@ -21,24 +21,33 @@ bool Renderer::updateKernelCameraArg() {
 	return true;
 }
 
+bool Renderer::updateKernelRayOriginArg() {
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Vector3f), &this->rayOrigin);
+	if (err != CL_SUCCESS) { return false; }
+	return true;
+}
+
 // TODO: Obviously move all this around to reflect the order in the header file.
 bool Renderer::updateKernelArgs() {			// TODO: This would be a good thing to totally make simpler through a C++ lib for OpenCL that you could make.
 	if (!updateKernelCameraArg()) { return false; }
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Vector3f), &this->rayOrigin);
-	if (err != CL_SUCCESS) { return false; }
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(Skybox), &(this->skybox));
+	if (!updateKernelRayOriginArg()) { return false; }
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(Skybox), &(this->skybox));
 	if (err != CL_SUCCESS) { return false; }
 	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 3, sizeof(Blackhole), &this->blackhole);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
 
-void Renderer::calculateRayOrigin(float FOV) {
-	float rawDist = 0.5f / tan(FOV / 180 * constants::pi / 2);		// TODO: Make sure this is as efficient as it can be. Division avoidable?
+void Renderer::calculateRayOriginRawDist(float FOV) {
+	rayOriginRawDist = 0.5f / tan(FOV / 180 * constants::pi / 2);		// TODO: Make sure this is as efficient as it can be. Division avoidable?
+}
+
+void Renderer::calculateRayOrigin() {
 	int refDim;
 	if (windowWidth > windowHeight) { refDim = windowHeight; }
 	else { refDim = windowWidth; }
-	rayOrigin = Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, camera.nearPlane + rawDist * refDim);
+	rayOrigin = Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, camera.nearPlane + rayOriginRawDist * refDim);
+	// windowWidth / 2.0f is necessary even though we have halfWindowWidth already because this one is more exact because floats, which is necessary for rayOrigin. TODO: Make sure that statement is true.
 }
 
 void Renderer::setCameraRotSensitivity(float x, float y) {
