@@ -41,11 +41,31 @@ typedef struct Skybox {
     Vector3f test;
 } Skybox;
 
+float abscus(float x) {
+    if (x < 0) { x = -x; }
+    return x;
+}
+
 uint3 skyboxSample(Skybox skybox, Vector3f normVec) {
     uint3 result;
-    result.x = abs((int)(normVec.x * 255));         // TODO: Figure out why the abs is necessary here. Should integer overflow take care of this for us. Just undo and test.
-    result.y = abs((int)(normVec.y * 255));
-    result.z = abs((int)(normVec.z * 255));          // TODO: The probabilities of this are a bit off. You should use round before casting.
+    if (abscus(normVec.x) > abscus(normVec.y) && abscus(normVec.x) > abscus(normVec.z)) {
+        result.x = 255;
+        result.y = 0;
+        result.z = 0;
+        return result;
+    }
+    if (abscus(normVec.y) > abscus(normVec.x) && abscus(normVec.y) > abscus(normVec.z)) {
+        result.y = 255;
+        result.x = 0;
+        result.z = 0;
+        return result;
+    }
+    if (abscus(normVec.z) > abscus(normVec.y) && abscus(normVec.z) > abscus(normVec.x)) {
+        result.z = 255;
+        result.y = 0;
+        result.x = 0;
+        return result;
+    }
     return result;
 }
 
@@ -70,13 +90,37 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 
     // Rotate ray and rayOrigin based on camera look direction.
     float cameraCosX = cos(camera.rot.x);
-    float cameraSinX = sin(camera.rot.x);
+    float cameraSinX = sin(camera.rot.x);           // TODO: You can offload these calculations to the host without problem.
+                                                    // TODO: You should defo use matrices for this, because GPU might be optimized for that.
 
-    rayOrigin.x = cameraCosX * rayOrigin.x - cameraSinX * rayOrigin.y;
-    rayOrigin.y = cameraSinX * rayOrigin.x + cameraCosX * rayOrigin.y;
+    float cameraCosY = cos(camera.rot.y);
+    float cameraSinY = sin(camera.rot.y);
 
-    ray.x = cameraCosX * ray.x - cameraSinX * ray.y;
-    ray.y = cameraSinX * ray.x + cameraCosX * ray.y;
+    ray.x += rayOrigin.x;
+    ray.y += rayOrigin.y;
+    ray.z += rayOrigin.z;
+
+    Vector3f rayCopy = ray;
+    Vector3f rayOriginCopy = rayOrigin;
+
+    rayOrigin.x = cameraCosX * rayOriginCopy.x - cameraSinX * rayOriginCopy.z;
+    rayOrigin.z = cameraSinX * rayOriginCopy.x + cameraCosX * rayOriginCopy.z;
+
+    ray.x = cameraCosX * rayCopy.x - cameraSinX * rayCopy.z;
+    ray.z = cameraSinX * rayCopy.x + cameraCosX * rayCopy.z;
+
+    rayOriginCopy = rayOrigin;
+    rayCopy = ray;
+
+    rayOrigin.z = cameraCosY * rayOriginCopy.z - cameraSinY * rayOriginCopy.y;
+    rayOrigin.y = cameraSinY * rayOriginCopy.z + cameraCosY * rayOriginCopy.y;
+
+    ray.z = cameraCosY * rayCopy.z - cameraSinY * rayCopy.y;
+    ray.y = cameraSinY * rayCopy.z + cameraCosY * rayCopy.y;
+
+    ray.x -= rayOrigin.x;
+    ray.y -= rayOrigin.y;
+    ray.z -= rayOrigin.z;
 
     uint3 color = skyboxSample(skybox, ray);
     write_imageui(outputFrame, coords, (uint4)(color.x, color.y, color.z, 255));
