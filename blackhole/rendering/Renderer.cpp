@@ -16,7 +16,15 @@ void Renderer::setWindowSize(unsigned int windowWidth, unsigned int windowHeight
 
 // Figure out a way to just update what you need inside of the camera. Even if it means splitting it open as more than one arg.
 bool Renderer::updateKernelCameraArg() {
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Camera), &(this->camera));// TODO: These parens are unnecessary.
+	
+}
+
+bool Renderer::loadCamera(Camera camera) {
+	Vector3f pos = camera.pos;
+	Matrix4f rot = Matrix4f::createRotationMat(-camera.rot);
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Vector3f), &pos);
+	if (err != CL_SUCCESS) { return false; }
+	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Matrix4f), &rot);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }

@@ -2,6 +2,9 @@
 
 #include "OpenCL/OpenCLBindingsAndHelpers.h"
 
+#include "math/Vector3f.h"
+#include "math/Matrix4f.h"
+
 #include "rendering/Camera.h"
 #include "rendering/Skybox.h"
 
@@ -14,7 +17,9 @@ public:
 	unsigned int windowHeight;				// TODO: I might want to move stuff in this class which depends on the window size.
 	void setWindowSize(unsigned int windowWidth, unsigned int windowHeight);
 
-	Camera camera;
+	//Vector3f cameraPos;
+	//Matrix4f cameraRot;
+	bool loadCamera(Camera camera);			// Takes apart the given camera. Create rot matrix and transmits that along with Vector3f position coords to the compute device.
 
 	Skybox skybox;
 

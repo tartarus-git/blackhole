@@ -9,7 +9,7 @@
 
 #include "logging/debugOutput.h"
 
-#define FOV 90
+#define FOV 60
 
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f

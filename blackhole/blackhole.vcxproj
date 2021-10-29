@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="math\Matrix4f.cpp" />
     <ClCompile Include="objects\Blackhole.cpp" />
     <ClCompile Include="rendering\Camera.cpp" />
     <ClCompile Include="logging\debugOutput.cpp" />
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="math\constants.h" />
+    <ClInclude Include="math\Matrix4f.h" />
     <ClInclude Include="objects\Blackhole.h" />
     <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="logging\debugOutput.h" />

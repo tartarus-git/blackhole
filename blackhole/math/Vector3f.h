@@ -8,6 +8,8 @@ public:
 	float z;
 
 	Vector3f() = default;
-	Vector3f(float x, float y, float z) : x(x), y(y), z(z) { }
+	constexpr Vector3f(float x, float y, float z) : x(x), y(y), z(z) { }
+
+	constexpr Vector3f operator-() noexcept;
 };
 
