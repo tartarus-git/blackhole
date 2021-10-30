@@ -76,7 +76,7 @@ typedef struct Blackhole {
 } Blackhole;
 
 __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowWidth, unsigned int windowHeight, 
-                            Camera camera, Vector3f rayOrigin, Skybox skybox, Blackhole blackhole) {
+                            vec3 cameraPos, mat4 cameraRot, vec3 rayOrigin, Skybox skybox, Blackhole blackhole) {
     int x = get_global_id(0);
 	if (x >= windowWidth) { return; }
 	int2 coords = (int2)(x, get_global_id(1));

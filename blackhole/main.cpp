@@ -20,6 +20,7 @@ int absHalfWindowWidth;
 int absHalfWindowHeight;
 
 Renderer renderer;
+Camera camera;
 
 bool captureMouse = false;
 bool captureKeyboard = false;
@@ -27,7 +28,7 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	switch (uMsg) {
 	case WM_MOUSEMOVE:
 		if (captureMouse) {
-			renderer.requestCameraRot(LOWORD(lParam) - halfWindowWidth, HIWORD(lParam) - halfWindowHeight);
+			camera.requestRot(LOWORD(lParam) - halfWindowWidth, HIWORD(lParam) - halfWindowHeight);
 			SetCursorPos(absHalfWindowWidth, absHalfWindowHeight);		// Set cursor back to middle of window.
 		}
 		return 0;
@@ -194,17 +195,26 @@ void graphicsLoop(HWND hWnd) {
 	compute::frameRegion[2] = 1;
 	updateKernelInterfaceMetadata();
 
-	renderer.setWindowSize(windowWidth, windowHeight);
-
-	renderer.camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
+	Camera camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
 	renderer.calculateRayOriginRawDist(FOV);
-	renderer.calculateRayOrigin();
-	renderer.setCameraRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
-	renderer.skybox = Skybox();
-	renderer.blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
-
-	if (!renderer.updateKernelArgs()) {
-		debuglogger::out << debuglogger::error << "failed to set renderer kernel args" << debuglogger::endl;
+	if (!renderer.loadNewRayOrigin(windowWidth, windowHeight)) {
+		debuglogger::out << debuglogger::error << "failed to load ray origin into compute device" << debuglogger::endl;
+		POST_THREAD_EXIT;
+		goto OpenCLRelease_all;
+	}
+	camera.setRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
+	if (!renderer.loadCamera(camera)) {
+		debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
+		POST_THREAD_EXIT;
+		goto OpenCLRelease_all;
+	}
+	if (!renderer.loadSkybox(Skybox())) {
+		debuglogger::out << debuglogger::error << "failed to load skybox into compute device" << debuglogger::endl;
+		POST_THREAD_EXIT;
+		goto OpenCLRelease_all;
+	}
+	if (!renderer.loadBlackhole(Blackhole(Vector3f(0, 0, 0), 10, 20))) {
+		debuglogger::out << debuglogger::error << "failed to load black hole into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT;
 		goto OpenCLRelease_all;
 	}
@@ -254,15 +264,11 @@ void graphicsLoop(HWND hWnd) {
 					EXIT_FROM_THREAD;
 				}
 
-				// Put new window size in renderer.
-				renderer.setWindowSize(windowWidth, windowHeight);
-
 				// Resize work group stuff.
 				updateKernelInterfaceMetadata();
 
 				// Reposition ray origin.
-				renderer.calculateRayOrigin();
-				if (!renderer.updateKernelRayOriginArg()) {
+				if (!renderer.loadNewRayOrigin(windowWidth, windowHeight, camera.nearPlane)) {
 					debuglogger::out << debuglogger::error << "failed to update kernel ray origin arg" << debuglogger::endl;
 					EXIT_FROM_THREAD;
 				}
@@ -280,7 +286,8 @@ void graphicsLoop(HWND hWnd) {
 				continue;
 			}
 
-			if (!renderer.doRequestedCameraRot()) {
+			camera.doRot();
+			if (!renderer.loadCamera(camera)) {			// TODO: Make a function that only loads the rot part, which is easy now thanks to the new system.
 				debuglogger::out << debuglogger::error << "failed to do requested camera rot" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}
