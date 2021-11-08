@@ -18,7 +18,7 @@ public:
 	bool rotRequested = false;
 
 	Camera() = default;
-	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), nearPlane(nearPlane) { }
+	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), nearPlane(-nearPlane) { }
 
 	void setRotSensitivity(float x, float y);
 	void requestRot(int dx, int dy);

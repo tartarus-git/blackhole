@@ -7,6 +7,8 @@
 #include "logging/debugOutput.h"
 #include <thread>
 
+HWND hWnd;
+
 void setWindowPos(int newPosX, int newPosY);
 void setWindowSize(unsigned int newWidth, unsigned int newHeight);
 void setWindow(int newPosX, int newPosY, unsigned int newWidth, unsigned int newHeight);
@@ -39,7 +41,9 @@ bool listenForBoundsChange(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			tempWindowSizesUpdated = true;
 			return true;
 		case SIZE_MAXIMIZED:
-			setWindowSize(LOWORD(lParam), HIWORD(lParam));
+			POINT pos = { 0, 0 };
+			ClientToScreen(hWnd, &pos);
+			setWindow(pos.x, pos.y, LOWORD(lParam), HIWORD(lParam));
 			windowMaximized = true;
 			tempWindowSizesUpdated = false;
 			return true;
@@ -94,7 +98,7 @@ bool listenForExitAttempts(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #define POST_THREAD_EXIT if (!PostMessage(hWnd, UWM_EXIT_FROM_THREAD, 0, 0)) { debuglogger::out << debuglogger::error << "failed to post UWM_EXIT_FROM_THREAD message to window queue" << debuglogger::endl; }
-void graphicsLoop(HWND hWnd);
+void graphicsLoop();
 
 #ifdef UNICODE
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, wchar_t* lpCmdLine, int nCmdShow) {
@@ -115,7 +119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine
 		return EXIT_FAILURE;
 	}
 
-	HWND hWnd = CreateWindow(windowClass.lpszClassName, TEXT(WINDOW_TITLE), WS_OVERLAPPEDWINDOW,
+	hWnd = CreateWindow(windowClass.lpszClassName, TEXT(WINDOW_TITLE), WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
 	if (hWnd == nullptr) {																																				// Check if creation of window was successful.
 		debuglogger::out << debuglogger::error << "couldn't create window" << debuglogger::endl;
@@ -138,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine
 	setWindow(clientPos.x, clientPos.y, clientRect.right, clientRect.bottom);
 
 	debuglogger::out << "starting graphics thread..." << debuglogger::endl;
-	graphicsThread = std::thread(graphicsLoop, hWnd);
+	graphicsThread = std::thread(graphicsLoop);
 
 	debuglogger::out << "running message loop..." << debuglogger::endl;
 	MSG msg = { };

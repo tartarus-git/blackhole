@@ -5,30 +5,32 @@
 
 #include "math/constants.h"
 
+#include "math/Vector3f.h"
+
 #include "logging/debugOutput.h"
 
 #define RENDERER_ARGS_START_INDEX 3
 
-
-// TODO: The loading thing would be cooler if Renderer_args_start_index was a counter or something. Then the order in which the user call these functions would matter, and I wouldn't have to rewrite the numbers everytime I change the kernel args.
 bool Renderer::loadCamera(Camera camera) {
 	Vector3f pos = camera.pos;
-	Matrix4f rot = Matrix4f::createRotationMat(-camera.rot);
+	Matrix4f rot = Matrix4f::createRotationMat(camera.rot);
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Vector3f), &pos);
 	if (err != CL_SUCCESS) { return false; }
 	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Matrix4f), &rot);
 	if (err != CL_SUCCESS) { return false; }
-	return true;
-}
-
-bool Renderer::loadSkybox(Skybox skybox) {
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 3, sizeof(Skybox), &skybox);		// TODO: Using ref arg would probably be better here because we take pointer of it anyway, which the compiler could then more easily optimize.
+	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(float), &camera.nearPlane);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
 
-bool Renderer::loadBlackhole(Blackhole blackhole) {
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 4, sizeof(Blackhole), &blackhole);
+bool Renderer::loadSkybox(Skybox* skybox) {
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 4, sizeof(Skybox), skybox);
+	if (err != CL_SUCCESS) { return false; }
+	return true;
+}
+
+bool Renderer::loadBlackhole(Blackhole* blackhole) {
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 5, sizeof(Blackhole), blackhole);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
@@ -46,7 +48,7 @@ bool Renderer::loadNewRayOrigin(unsigned int windowWidth, unsigned int windowHei
 	Vector3f rayOrigin = Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, nearPlane + rayOriginRawDist * refDim);
 	// windowWidth / 2.0f is necessary even though we have halfWindowWidth already because this one is more exact because floats, which is necessary for rayOrigin. TODO: Make sure that statement is true.
 
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(Vector3f), &rayOrigin);
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 3, sizeof(Vector3f), &rayOrigin);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }

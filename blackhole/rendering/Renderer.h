@@ -14,8 +14,8 @@ class Renderer
 {
 public:
 	bool loadCamera(Camera camera);			// Takes apart the given camera. Create rot matrix and transmits that along with Vector3f position coords to the compute device.
-	bool loadSkybox(Skybox skybox);
-	bool loadBlackhole(Blackhole blackhole);
+	bool loadSkybox(Skybox* skybox);
+	bool loadBlackhole(Blackhole* blackhole);
 
 	float rayOriginRawDist;
 	void calculateRayOriginRawDist(float FOV);			// TODO: Maybe come up with better name or something, idk. Also make it maybe so that you don't always have to call both of these functions. Maybe make another one which combines both or something.

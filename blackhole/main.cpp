@@ -9,7 +9,7 @@
 
 #include "logging/debugOutput.h"
 
-#define FOV 60
+#define FOV 120
 
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
@@ -45,8 +45,6 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-HWND hWnd;
-
 int newWindowX;
 int newWindowY;
 
@@ -58,7 +56,7 @@ unsigned int newWindowHeight;
 bool windowResized = false;
 void setWindowSize(unsigned int newWindowWidth, unsigned int newWindowHeight) {								// This gets triggered once if the first action of you do is to move the window, for the rest of the moves, it doesn't get triggered.
 	::newWindowWidth = newWindowWidth;																		// This is practically unavoidable without a little much effort. It's not really bad as long as it's just one time, so I'm going to leave it.
-	::newWindowHeight = newWindowHeight;
+	::newWindowHeight = newWindowHeight;																	// TODO: The above comments should go on setWindow, not this function, fix that.
 	windowResized = true;
 	halfWindowWidth = newWindowWidth / 2;
 	halfWindowHeight = newWindowHeight / 2;
@@ -158,9 +156,7 @@ void updateKernelInterfaceMetadata() {
 
 #define EXIT_FROM_THREAD POST_THREAD_EXIT goto releaseEverything;
 
-void graphicsLoop(HWND hWnd) {
-	::hWnd = hWnd;
-
+void graphicsLoop() {
 	updateActualWindowSize();
 	windowResized = false;
 
@@ -194,32 +190,33 @@ void graphicsLoop(HWND hWnd) {
 	compute::frameOrigin[2] = 0;
 	compute::frameRegion[2] = 1;
 	updateKernelInterfaceMetadata();
-
-	Camera camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
-	renderer.calculateRayOriginRawDist(FOV);
-	if (!renderer.loadNewRayOrigin(windowWidth, windowHeight)) {
-		debuglogger::out << debuglogger::error << "failed to load ray origin into compute device" << debuglogger::endl;
-		POST_THREAD_EXIT;
-		goto OpenCLRelease_all;
-	}
-	camera.setRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
-	if (!renderer.loadCamera(camera)) {
-		debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
-		POST_THREAD_EXIT;
-		goto OpenCLRelease_all;
-	}
-	if (!renderer.loadSkybox(Skybox())) {
-		debuglogger::out << debuglogger::error << "failed to load skybox into compute device" << debuglogger::endl;
-		POST_THREAD_EXIT;
-		goto OpenCLRelease_all;
-	}
-	if (!renderer.loadBlackhole(Blackhole(Vector3f(0, 0, 0), 10, 20))) {
-		debuglogger::out << debuglogger::error << "failed to load black hole into compute device" << debuglogger::endl;
-		POST_THREAD_EXIT;
-		goto OpenCLRelease_all;
-	}
-
 	{
+		camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
+		renderer.calculateRayOriginRawDist(FOV);
+		if (!renderer.loadNewRayOrigin(windowWidth, windowHeight, camera.nearPlane)) {
+			debuglogger::out << debuglogger::error << "failed to load ray origin into compute device" << debuglogger::endl;
+			POST_THREAD_EXIT;
+			goto OpenCLRelease_all;
+		}
+		camera.setRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
+		if (!renderer.loadCamera(camera)) {
+			debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
+			POST_THREAD_EXIT;
+			goto OpenCLRelease_all;
+		}
+		Skybox skybox;
+		if (!renderer.loadSkybox(&skybox)) {
+			debuglogger::out << debuglogger::error << "failed to load skybox into compute device" << debuglogger::endl;
+			POST_THREAD_EXIT;
+			goto OpenCLRelease_all;
+		}
+		Blackhole blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
+		if (!renderer.loadBlackhole(&blackhole)) {
+			debuglogger::out << debuglogger::error << "failed to load black hole into compute device" << debuglogger::endl;
+			POST_THREAD_EXIT;
+			goto OpenCLRelease_all;
+		}
+
 		HDC finalG = GetDC(hWnd);
 		HBITMAP bmp = CreateCompatibleBitmap(finalG, windowWidth, windowHeight);
 		size_t outputFrame_size = windowWidth * windowHeight * 4;
