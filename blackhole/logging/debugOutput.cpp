@@ -6,7 +6,7 @@
 #include <Windows.h>
 
 #include <cstdint>
-#include <stdlib.h>																									// This is included because we need access to _itoa.
+#include <cstdlib>																									// This is included because we need access to _itoa.
 #include <string>
 
 DebugOutput& DebugOutput::operator<<(const char* input) {

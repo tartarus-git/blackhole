@@ -19,3 +19,9 @@ void Camera::doRot() {
 		rotRequested = false;
 	}
 }
+
+void Camera::requestMove(Vector3f move) { requestedMove = move; moveRequested = true; }
+
+void Camera::move(Vector3f move) { pos += move.rotate(rot); }
+
+void Camera::doMove() { if (moveRequested) { move(requestedMove); moveRequested = false; } }

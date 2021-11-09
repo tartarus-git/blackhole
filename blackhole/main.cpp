@@ -14,16 +14,18 @@
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
 
+#define MOVE_SENSITIVITY 1
+
 unsigned int halfWindowWidth;
 unsigned int halfWindowHeight;
 int absHalfWindowWidth;
 int absHalfWindowHeight;
 
-Renderer renderer;
 Camera camera;
+Renderer renderer;
 
-bool captureMouse = false;
 bool captureKeyboard = false;
+bool captureMouse = false;
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_MOUSEMOVE:
@@ -34,8 +36,12 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 		return 0;
 	case WM_KEYDOWN:
 		if (captureKeyboard) {
-			// TODO: Make following into switch case when you add more keys.
-			if (wParam == VK_ESCAPE) { captureMouse = !captureMouse; return 0; }
+			switch (wParam) {
+			case KEY_W:
+				camera.requestMove()
+			case VK_ESCAPE:
+				captureMouse = !captureMouse; return 0;
+			}
 		}
 		break;
 	default:

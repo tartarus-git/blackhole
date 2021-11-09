@@ -10,12 +10,15 @@ public:
 	
 	float nearPlane;
 
-	float rotSensitivityX;		// TODO: Maybe put these into a Vector2f or something.
+	float rotSensitivityX;
 	float rotSensitivityY;
 
 	int requestedDX;
 	int requestedDY;
 	bool rotRequested = false;
+
+	Vector3f requestedMove;
+	bool moveRequested = false;
 
 	Camera() = default;
 	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), nearPlane(-nearPlane) { }
@@ -23,5 +26,9 @@ public:
 	void setRotSensitivity(float x, float y);
 	void requestRot(int dx, int dy);
 	void doRot();
+
+	void requestMove(Vector3f move);
+	void move(Vector3f move);
+	void doMove();
 };
 
