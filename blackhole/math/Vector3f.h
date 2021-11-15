@@ -29,26 +29,24 @@ public:
 		return result;
 	}
 
-	constexpr Vector3f rotate(Vector3f rot) noexcept {
-		float cosX = cos(x);
-		float sinX = sin(x);
-		float cosY = cos(y);
-		float sinY = sin(y);
-		float cosZ = cos(z);
-		float sinZ = sin(z);
+	Vector3f rotate(Vector3f rot) noexcept {					// TODO: This should be constexpr but the STL doesn't allow it because the trig functions don't satisfy the requirements for constexpr, they modify global variables. If you rewrite the trig functions you can make this constexpr.
+		Vector3f result;
 
-		Vector3f result = { };
+		float cosine = cos(rot.y);
+		float sine = sin(rot.y);
+		result.y = cosine * y - sine * z;
+		result.z = sine * y + cosine * z;
 
-		result.y = cosY * y - sinY * z;
-		result.z = sinY * y + cosY * z;
+		cosine = cos(rot.x);
+		sine = sin(rot.x);
+		result.x = cosine * x - sine * z;
+		result.z = sine * x + cosine * z;
 
-		result.x = cosX * x - sinX * z;
-		result.z = sinX * x + cosX * z;
-
-		result.x = cosZ * x - sinZ * y;
-		result.y = sinZ * x + cosZ * y;
+		cosine = cos(rot.z);
+		sine = sin(rot.z);
+		result.x = cosine * x - sine * y;
+		result.y = sine * x + cosine * y;
 
 		return result;
 	}
 };
-

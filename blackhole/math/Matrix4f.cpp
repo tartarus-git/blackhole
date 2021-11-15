@@ -67,7 +67,16 @@ Matrix4f Matrix4f::createRotationMat(float x, float y, float z) {
 	result2[sample(0, 0)] = 1;
 	result2[sample(3, 3)] = 1;
 
-	result = result * result2;
+	Matrix4f result3 = { };
+
+	result3[sample(0, 0)] = cosZ;
+	result3[sample(0, 1)] = -sinZ;
+	result3[sample(1, 0)] = sinZ;
+	result3[sample(1, 1)] = cosZ;
+	result3[sample(2, 2)] = 1;
+	result3[sample(3, 3)] = 1;
+
+	result = result3 * result * result2;
 
 	return result;
 }

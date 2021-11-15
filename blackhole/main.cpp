@@ -14,7 +14,13 @@
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
 
-#define MOVE_SENSITIVITY 1
+#define MOVE_SENSITIVITY 0.01f
+
+// Virtual key codes.
+#define KEY_W 0x57
+#define KEY_A 0x41
+#define KEY_S 0x53
+#define KEY_D 0x44
 
 unsigned int halfWindowWidth;
 unsigned int halfWindowHeight;
@@ -23,6 +29,13 @@ int absHalfWindowHeight;
 
 Camera camera;
 Renderer renderer;
+
+namespace keys {
+	bool w = false;
+	bool a = false;
+	bool s = false;
+	bool d = false;
+}
 
 bool captureKeyboard = false;
 bool captureMouse = false;
@@ -37,13 +50,23 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 	case WM_KEYDOWN:
 		if (captureKeyboard) {
 			switch (wParam) {
-			case KEY_W:
-				camera.requestMove()
-			case VK_ESCAPE:
-				captureMouse = !captureMouse; return 0;
+			case KEY_W: keys::w = true; return 0;
+			case KEY_A: keys::a = true; return 0;
+			case KEY_S: keys::s = true; return 0;
+			case KEY_D: keys::d = true; return 0;
+			case VK_ESCAPE: captureMouse = !captureMouse; return 0;
 			}
 		}
-		break;
+		return 0;
+	case WM_KEYUP:
+		if (captureKeyboard) {
+			switch (wParam) {
+			case KEY_W: keys::w = false; return 0;
+			case KEY_A: keys::a = false; return 0;
+			case KEY_S: keys::s = false; return 0;
+			case KEY_D: keys::d = false; return 0;
+			}
+		}
 	default:
 		if (listenForBoundsChange(uMsg, wParam, lParam)) { return 0; }
 		if (listenForExitAttempts(uMsg, wParam, lParam)) { return 0; }
@@ -290,6 +313,14 @@ void graphicsLoop() {
 			}
 
 			camera.doRot();
+
+			Vector3f moveVector = { };
+			if (keys::w) { moveVector.z -= MOVE_SENSITIVITY; }
+			if (keys::a) { moveVector.x -= MOVE_SENSITIVITY; }
+			if (keys::s) { moveVector.z += MOVE_SENSITIVITY; }
+			if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
+			camera.move(moveVector);
+
 			if (!renderer.loadCamera(camera)) {			// TODO: Make a function that only loads the rot part, which is easy now thanks to the new system.
 				debuglogger::out << debuglogger::error << "failed to do requested camera rot" << debuglogger::endl;
 				EXIT_FROM_THREAD;
