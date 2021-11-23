@@ -20,6 +20,8 @@ public:
 	// Not using anything here makes it easier for the compiler, even if Vector3f has explicit move stuff, to do copy/move elision.
 	// It basically just permutates the lvalue object thats left of the equal sign in the calling code instead of creating one here and copying or moving it, which is way better.
 
+// TODO: Edit the above note so say that returning an l-value reference is actually the best thing to do, which we currently are not doing. We thought we probs shouldn't do it because it could have something to do with pointers, but thats impossible in this situation. It actually makes more sense and signals the intent to optimize more.
+
 	constexpr Vector3f operator+(Vector3f other) noexcept { return Vector3f(x + other.x, y + other.y, z + other.z); }
 	constexpr Vector3f operator+=(Vector3f other) noexcept {
 		Vector3f result = operator+(other);
