@@ -9,21 +9,10 @@ public:
 	Vector3f rot;
 	
 	float nearPlane;
-
-	float rotSensitivityX;
-	float rotSensitivityY;
-
-	int requestedDX;
-	int requestedDY;
-	bool rotRequested = false;
+	float FOV;
 
 	Camera() = default;
-	Camera(Vector3f pos, Vector3f rot, float FOV, float nearPlane) : pos(pos), rot(rot), nearPlane(-nearPlane) { }
-
-	void setRotSensitivity(float x, float y);
-	void requestRot(int dx, int dy);
-	void doRot();
+	Camera(Vector3f pos, Vector3f rot, float nearPlane, float FOV) : pos(pos), rot(rot), nearPlane(-nearPlane), FOV(FOV) { }			// TODO: Probs put this in implementation file.
 
 	void move(Vector3f move);
 };
-

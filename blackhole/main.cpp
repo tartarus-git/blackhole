@@ -39,11 +39,20 @@ int absHalfWindowHeight;
 
 bool captureKeyboard = false;
 bool captureMouse = false;
+
+int mouseTotalX = 0;
+int mouseTotalY = 0;
+bool pendingMouseMove = false;
+
 LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 	case WM_MOUSEMOVE:
 		if (captureMouse) {
-			camera.requestRot(LOWORD(lParam) - halfWindowWidth, HIWORD(lParam) - halfWindowHeight);
+			if (!pendingMouseMove) {
+				mouseTotalX = LOWORD(lParam) - halfWindowWidth;			// TODO: See if you can find a way to have the windowProc keep adding to mouseTotalX if the graphics loop hasn't processed them yet. Atomics?
+				mouseTotalY = HIWORD(lParam) - halfWindowHeight;
+				pendingMouseMove = true;
+			}
 			SetCursorPos(absHalfWindowWidth, absHalfWindowHeight);		// Set cursor back to middle of window.
 		}
 		return 0;
@@ -227,7 +236,6 @@ void graphicsLoop() {
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
 		}
-		camera.setRotSensitivity(LOOK_SENSITIVITY_X, LOOK_SENSITIVITY_Y);
 		if (!renderer.loadCamera(camera)) {
 			debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;
@@ -312,7 +320,13 @@ void graphicsLoop() {
 				continue;
 			}
 
-			camera.doRot();
+			if (pendingMouseMove) {
+				camera.rot.x += mouseTotalX * LOOK_SENSITIVITY_X;			// TODO: Probably prevent this from overflowing by checking if the rot changes break 2pi boundaries and then subtracting by camera.rot.x / 2pi.
+				camera.rot.y += mouseTotalY * LOOK_SENSITIVITY_Y;
+				mouseTotalX = 0;
+				mouseTotalY = 0;
+				pendingMouseMove = false;
+			}
 
 			Vector3f moveVector = { };
 			if (keys::w) { moveVector.z -= MOVE_SENSITIVITY; }
