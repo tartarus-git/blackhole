@@ -80,6 +80,9 @@
     <ClInclude Include="math\Matrix4f.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="math\Vector4f.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="kernels\raytracer.cl" />

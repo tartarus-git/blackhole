@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="math\constants.h" />
     <ClInclude Include="math\Matrix4f.h" />
+    <ClInclude Include="math\Vector4f.h" />
     <ClInclude Include="objects\Blackhole.h" />
     <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="logging\debugOutput.h" />

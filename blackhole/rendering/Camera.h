@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/Vector3f.h"
+#include "math/Vector4f.h"
 
 class Camera
 {
@@ -19,8 +20,8 @@ public:
 
 class DeviceCamera {
 public:
-	Vector3f pos;
-	Vector3f rayOrigin;
+	Vector4f pos;								// NOTE: Vector4f's are being used here instead of Vector3f's because OpenCL uses float4 even when you tell it to use float3, which the CPU has to accomodate when transferring data.
+	Vector4f rayOrigin;
 	float nearPlane;
 
 	DeviceCamera() = default;

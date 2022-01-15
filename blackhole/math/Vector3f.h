@@ -23,31 +23,33 @@ public:
 // TODO: Edit the above note so say that returning an l-value reference is actually the best thing to do, which we currently are not doing. We thought we probs shouldn't do it because it could have something to do with pointers, but thats impossible in this situation. It actually makes more sense and signals the intent to optimize more.
 
 	constexpr Vector3f operator+(Vector3f other) noexcept { return Vector3f(x + other.x, y + other.y, z + other.z); }
-	constexpr Vector3f operator+=(Vector3f other) noexcept {
+	constexpr Vector3f& operator+=(Vector3f other) noexcept {
 		Vector3f result = operator+(other);
 		x = result.x;
 		y = result.y;
 		z = result.z;
-		return result;
+		return *this;
 	}
 
 	Vector3f rotate(Vector3f rot) noexcept {			// NOTE: This should be constexpr but the trig functions don't allow that for some reason. Can't write our own because the trig functions might be optimized for each platform and writing our own would lose us performance.
 		Vector3f result;
 
-		float cosine = cos(rot.y);
-		float sine = sin(rot.y);
-		result.y = cosine * y - sine * z;
-		result.z = sine * y + cosine * z;
-
-		cosine = cos(rot.x);
-		sine = sin(rot.x);
+		float cosine = cos(rot.x);
+		float sine = sin(rot.x);
 		result.x = cosine * x - sine * z;
 		result.z = sine * x + cosine * z;
 
+		cosine = cos(rot.y);
+		sine = sin(rot.y);
+		result.y = cosine * y - sine * result.z;
+		result.z = sine * y + cosine * result.z;
+
+
+
 		cosine = cos(rot.z);
 		sine = sin(rot.z);
-		result.x = cosine * x - sine * y;
-		result.y = sine * x + cosine * y;
+		result.x = cosine * result.x - sine * result.y;
+		result.y = sine * result.x + cosine * result.y;
 
 		return result;
 	}

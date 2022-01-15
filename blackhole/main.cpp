@@ -14,7 +14,7 @@
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
 
-#define MOVE_SENSITIVITY 0.01f
+#define MOVE_SENSITIVITY 0.1f
 
 // Virtual key codes.
 #define KEY_W 0x57
@@ -247,7 +247,7 @@ void graphicsLoop() {
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
 		}
-		Blackhole blackhole = Blackhole(Vector3f(0, 0, 0), 10, 20);
+		Blackhole blackhole = Blackhole(Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, -20), 15, 20);
 		if (!renderer.loadBlackhole(&blackhole)) {
 			debuglogger::out << debuglogger::error << "failed to load black hole into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;
@@ -335,7 +335,7 @@ void graphicsLoop() {
 			if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
 			camera.move(moveVector);
 
-			if (!renderer.loadCameraRot(camera.rot)) {			// TODO: Make a function that only loads the rot part, which is easy now thanks to the new system.
+			if (!renderer.loadCamera(camera, windowWidth, windowHeight)) {
 				debuglogger::out << debuglogger::error << "failed to do requested camera rot" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}

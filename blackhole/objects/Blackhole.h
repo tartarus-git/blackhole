@@ -1,11 +1,11 @@
 #pragma once
 
-#include "math/Vector3f.h"
+#include "math/Vector4f.h"
 
 class Blackhole
 {
 public:
-	Vector3f pos;
+	Vector4f pos;
 	float blackRadius;
 	float influenceRadius;
 
