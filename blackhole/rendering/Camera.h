@@ -16,3 +16,13 @@ public:
 
 	void move(Vector3f move);
 };
+
+class DeviceCamera {
+public:
+	Vector3f pos;
+	Vector3f rayOrigin;
+	float nearPlane;
+
+	DeviceCamera() = default;
+	DeviceCamera(Vector3f pos, Vector3f rayOrigin, float nearPlane) : pos(pos), rayOrigin(rayOrigin), nearPlane(nearPlane) { }
+};

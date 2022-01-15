@@ -229,13 +229,13 @@ void graphicsLoop() {
 	compute::frameRegion[2] = 1;
 	updateKernelInterfaceMetadata();
 	{
-		camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV, 1);
-		renderer.calculateRayOriginRawDist(FOV);
-		if (!renderer.loadNewRayOrigin(windowWidth, windowHeight, camera.nearPlane)) {
+		camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), 1, FOV);
+		//renderer.calculateRayOriginRawDist(FOV);
+		/*if (!renderer.loadNewRayOrigin(windowWidth, windowHeight, camera.nearPlane)) {
 			debuglogger::out << debuglogger::error << "failed to load ray origin into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
-		}
+		*/}
 		if (!renderer.loadCamera(camera)) {
 			debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;

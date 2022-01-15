@@ -6,31 +6,35 @@
 #include "math/constants.h"
 
 #include "math/Vector3f.h"
+#include "rendering/Camera.h"
 
 #include "logging/debugOutput.h"
 
 #define RENDERER_ARGS_START_INDEX 3
 
-bool Renderer::loadCamera(Camera camera) {
-	Vector3f pos = camera.pos;
-	Matrix4f rot = Matrix4f::createRotationMat(Vector3f(camera.rot.x, camera.rot.y, camera.rot.z));
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Vector3f), &pos);
+Vector3f calculateRayOrigin(float nearPlane, float FOV, unsigned int windowWidth, unsigned int windowHeight) {
+
+}
+
+bool Renderer::loadCamera(Camera camera, unsigned int windowWidth, unsigned int windowHeight) {
+	DeviceCamera deviceCamera(camera.pos, calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), camera.nearPlane);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(DeviceCamera), &deviceCamera);
 	if (err != CL_SUCCESS) { return false; }
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Matrix4f) - 4, &rot);
-	if (err != CL_SUCCESS) { return false; }
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(float), &camera.nearPlane);
+
+	Matrix4f rot = Matrix4f::createRotationMat(camera.rot);
+	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, 16 * sizeof(float), &rot);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
 
 bool Renderer::loadSkybox(Skybox* skybox) {
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 4, sizeof(Skybox), skybox);
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(Skybox), skybox);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
 
 bool Renderer::loadBlackhole(Blackhole* blackhole) {
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 5, sizeof(Blackhole), blackhole);
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 3, sizeof(Blackhole), blackhole);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
 }
@@ -55,14 +59,10 @@ bool Renderer::loadNewRayOrigin(unsigned int windowWidth, unsigned int windowHei
 
 cl_int Renderer::render(char* outputFrame) {
 	cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, compute::globalSize, compute::localSize, 0, nullptr, nullptr);
-	if (err != CL_SUCCESS) {
-		debuglogger::out << debuglogger::error << "failed to enqueue compute kernel" << debuglogger::endl;
-		return err;
-	}
+	if (err != CL_SUCCESS) { debuglogger::out << debuglogger::error << "failed to enqueue compute kernel" << debuglogger::endl; return err; }
+
 	err = clEnqueueReadImage(compute::commandQueue, compute::outputFrame, true, compute::frameOrigin, compute::frameRegion, 0, 0, outputFrame, 0, nullptr, nullptr);
-	if (err != CL_SUCCESS) {
-		debuglogger::out << debuglogger::error << "failed to read outputFrame_computeImage from compute device" << debuglogger::endl;
-		return err;
-	}
+	if (err != CL_SUCCESS) { debuglogger::out << debuglogger::error << "failed to read outputFrame_computeImage from compute device" << debuglogger::endl; return err; }
+
 	return CL_SUCCESS;
 }
