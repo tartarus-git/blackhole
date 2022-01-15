@@ -13,6 +13,7 @@
 class Renderer
 {
 public:
+	bool loadCameraRot(Vector3f cameraRot);
 	bool loadCamera(Camera camera, unsigned int windowWidth, unsigned int windowHeight);			// Takes apart the given camera. Create rot matrix and transmits that along with Vector3f position coords to the compute device.
 	bool loadSkybox(Skybox* skybox);
 	bool loadBlackhole(Blackhole* blackhole);

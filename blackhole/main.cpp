@@ -235,8 +235,8 @@ void graphicsLoop() {
 			debuglogger::out << debuglogger::error << "failed to load ray origin into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
-		*/}
-		if (!renderer.loadCamera(camera)) {
+		}*/
+		if (!renderer.loadCamera(camera, windowWidth, windowHeight)) {
 			debuglogger::out << debuglogger::error << "failed to load camera into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
@@ -302,8 +302,8 @@ void graphicsLoop() {
 				updateKernelInterfaceMetadata();
 
 				// Reposition ray origin.
-				if (!renderer.loadNewRayOrigin(windowWidth, windowHeight, camera.nearPlane)) {
-					debuglogger::out << debuglogger::error << "failed to update kernel ray origin arg" << debuglogger::endl;
+				if (!renderer.loadCamera(camera, windowWidth, windowHeight)) {
+					debuglogger::out << debuglogger::error << "failed to update kernel camera arg" << debuglogger::endl;
 					EXIT_FROM_THREAD;
 				}
 
@@ -335,7 +335,7 @@ void graphicsLoop() {
 			if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
 			camera.move(moveVector);
 
-			if (!renderer.loadCamera(camera)) {			// TODO: Make a function that only loads the rot part, which is easy now thanks to the new system.
+			if (!renderer.loadCameraRot(camera.rot)) {			// TODO: Make a function that only loads the rot part, which is easy now thanks to the new system.
 				debuglogger::out << debuglogger::error << "failed to do requested camera rot" << debuglogger::endl;
 				EXIT_FROM_THREAD;
 			}

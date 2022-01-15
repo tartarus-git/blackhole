@@ -13,18 +13,25 @@
 #define RENDERER_ARGS_START_INDEX 3
 
 Vector3f calculateRayOrigin(float nearPlane, float FOV, unsigned int windowWidth, unsigned int windowHeight) {
+	int refDim;
+	if (windowWidth > windowHeight) { refDim = windowHeight; }
+	else { refDim = windowWidth; }
+	return Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, nearPlane + (0.5f / tan(FOV / 180 * constants::pi / 2)) * refDim);			// NOTE: floating-point division is slower than floating point multiplication often because some divisors don't have floating point representations as far as I understand it. x / 10 != x * 0.1f. Does that mean that you could speed something up by doing: x * (1 / 10). The 1/10 would be calculated at compile time and then the resulting multiplication would be faster at run-time. Is that a valid approach? <-- TODO NOTE: BTW, compilers don't do this optimization by default because it slightly changes the value of the result, which, for us, is almost never a problem. You can override this I think by setting some fast-math flag in gcc for example. See about something like that for MSVC
+	// windowWidth / 2.0f is necessary even though we have halfWindowWidth already because this one is more exact because floats, which is necessary for rayOrigin. TODO: Make sure that statement is true.
+}
 
+bool Renderer::loadCameraRot(Vector3f cameraRot) {
+	Matrix4f rot = Matrix4f::createRotationMat(cameraRot);
+	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, 16 * sizeof(float), &rot);
+	if (err != CL_SUCCESS) { return false; }
+	return true;
 }
 
 bool Renderer::loadCamera(Camera camera, unsigned int windowWidth, unsigned int windowHeight) {
 	DeviceCamera deviceCamera(camera.pos, calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), camera.nearPlane);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(DeviceCamera), &deviceCamera);
 	if (err != CL_SUCCESS) { return false; }
-
-	Matrix4f rot = Matrix4f::createRotationMat(camera.rot);
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, 16 * sizeof(float), &rot);
-	if (err != CL_SUCCESS) { return false; }
-	return true;
+	return loadCameraRot(camera.rot);
 }
 
 bool Renderer::loadSkybox(Skybox* skybox) {
@@ -40,22 +47,6 @@ bool Renderer::loadBlackhole(Blackhole* blackhole) {
 }
 
 // TODO: Obviously move all this around to reflect the order in the header file.
-
-void Renderer::calculateRayOriginRawDist(float FOV) {
-	rayOriginRawDist = 0.5f / tan(FOV / 180 * constants::pi / 2);		// TODO: Make sure this is as efficient as it can be. Division avoidable?
-}
-
-bool Renderer::loadNewRayOrigin(unsigned int windowWidth, unsigned int windowHeight, float nearPlane) {
-	int refDim;
-	if (windowWidth > windowHeight) { refDim = windowHeight; }
-	else { refDim = windowWidth; }
-	Vector3f rayOrigin = Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, nearPlane + rayOriginRawDist * refDim);
-	// windowWidth / 2.0f is necessary even though we have halfWindowWidth already because this one is more exact because floats, which is necessary for rayOrigin. TODO: Make sure that statement is true.
-
-	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 3, sizeof(Vector3f), &rayOrigin);
-	if (err != CL_SUCCESS) { return false; }
-	return true;
-}
 
 cl_int Renderer::render(char* outputFrame) {
 	cl_int err = clEnqueueNDRangeKernel(compute::commandQueue, compute::kernel, 2, nullptr, compute::globalSize, compute::localSize, 0, nullptr, nullptr);

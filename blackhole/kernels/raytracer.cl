@@ -59,7 +59,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	int2 coords = (int2)(x, get_global_id(1));
 
 	// NOTE: Z coords go out of the screen towards the viewer.
-	float3 ray = (float3)(coords.x, coords.y, nearPlane) - rayOrigin;
+	float3 ray = (float3)(coords.x, coords.y, camera.nearPlane) - camera.rayOrigin;
 	ray = normalize(ray);
 	ray = multMatFloat3(cameraRot, ray);
 
