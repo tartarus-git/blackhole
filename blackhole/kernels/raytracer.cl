@@ -1,10 +1,10 @@
-typedef struct Matrix4f { float data[16]; } Matrix4f;
+typedef struct Matrix4f { float data[16]; char useless; } Matrix4f;
 
 float3 multMatFloat3(Matrix4f mat, float3 vec) {
     float3 result;
-    result.x = mat.data[0] * vec.x + mat.data[1] * vec.y + mat.data[2] * vec.z;
-    result.y = mat.data[4] * vec.x + mat.data[5] * vec.y + mat.data[6] * vec.z;
-    result.z = mat.data[8] * vec.x + mat.data[9] * vec.y + mat.data[10] * vec.z;
+    result.x = mat.data[0] * vec.x + mat.data[4] * vec.y + mat.data[8] * vec.z;
+    result.y = mat.data[1] * vec.x + mat.data[5] * vec.y + mat.data[9] * vec.z;
+    result.z = mat.data[2] * vec.x + mat.data[6] * vec.y + mat.data[10] * vec.z;
     return result;
 }
 
@@ -42,7 +42,7 @@ uint3 skyboxSample(Skybox skybox, float3 normVec) {
 
 typedef struct Blackhole {
     float3 pos;
-    float blackRadius;          // TODO: Find out a way to make sure you use 32-bit floats on host as well as device. That might not always be the case.
+    float blackRadius;          // TODO: I'm pretty sure OpenCL GPU's always use 32-bit floats, check that. Make sure you're using 32-bit even on 64-bit mode on host floats.
     float influenceRadius;
 } Blackhole;
 

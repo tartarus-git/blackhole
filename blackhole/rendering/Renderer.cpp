@@ -13,10 +13,10 @@
 
 bool Renderer::loadCamera(Camera camera) {
 	Vector3f pos = camera.pos;
-	Matrix4f rot = Matrix4f::createRotationMat(Vector3f(camera.rot.x, camera.rot.y, pos.x));
+	Matrix4f rot = Matrix4f::createRotationMat(Vector3f(camera.rot.x, camera.rot.y, camera.rot.z));
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(Vector3f), &pos);
 	if (err != CL_SUCCESS) { return false; }
-	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Matrix4f), &rot);
+	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, sizeof(Matrix4f) - 4, &rot);
 	if (err != CL_SUCCESS) { return false; }
 	err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 2, sizeof(float), &camera.nearPlane);
 	if (err != CL_SUCCESS) { return false; }

@@ -31,7 +31,7 @@ public:
 		return result;
 	}
 
-	Vector3f rotate(Vector3f rot) noexcept {					// TODO: This should be constexpr but the STL doesn't allow it because the trig functions don't satisfy the requirements for constexpr, they modify global variables. If you rewrite the trig functions you can make this constexpr.
+	Vector3f rotate(Vector3f rot) noexcept {			// NOTE: This should be constexpr but the trig functions don't allow that for some reason. Can't write our own because the trig functions might be optimized for each platform and writing our own would lose us performance.
 		Vector3f result;
 
 		float cosine = cos(rot.y);

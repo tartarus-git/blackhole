@@ -22,20 +22,20 @@
 #define KEY_S 0x53
 #define KEY_D 0x44
 
-unsigned int halfWindowWidth;
-unsigned int halfWindowHeight;
-int absHalfWindowWidth;
-int absHalfWindowHeight;
-
-Camera camera;
-Renderer renderer;
-
 namespace keys {
 	bool w = false;
 	bool a = false;
 	bool s = false;
 	bool d = false;
 }
+
+Camera camera;
+Renderer renderer;
+
+unsigned int halfWindowWidth;
+unsigned int halfWindowHeight;
+int absHalfWindowWidth;
+int absHalfWindowHeight;
 
 bool captureKeyboard = false;
 bool captureMouse = false;
