@@ -16,7 +16,7 @@ Vector3f calculateRayOrigin(float nearPlane, float FOV, unsigned int windowWidth
 	int refDim;
 	if (windowWidth > windowHeight) { refDim = windowHeight; }
 	else { refDim = windowWidth; }
-	return Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, nearPlane + (0.5f / tan(FOV / 180 * constants::pi / 2)) * refDim);			// NOTE: floating-point division is slower than floating point multiplication often because some divisors don't have floating point representations as far as I understand it. x / 10 != x * 0.1f. Does that mean that you could speed something up by doing: x * (1 / 10). The 1/10 would be calculated at compile time and then the resulting multiplication would be faster at run-time. Is that a valid approach? <-- TODO NOTE: BTW, compilers don't do this optimization by default because it slightly changes the value of the result, which, for us, is almost never a problem. You can override this I think by setting some fast-math flag in gcc for example. See about something like that for MSVC
+	return Vector3f(windowWidth / 2.0f, windowHeight / 2.0f, (0.5f / tan(FOV / 180 * constants::pi / 2)) * refDim);			// NOTE: floating-point division is slower than floating point multiplication often because some divisors don't have floating point representations as far as I understand it. x / 10 != x * 0.1f. Does that mean that you could speed something up by doing: x * (1 / 10). The 1/10 would be calculated at compile time and then the resulting multiplication would be faster at run-time. Is that a valid approach? <-- TODO NOTE: BTW, compilers don't do this optimization by default because it slightly changes the value of the result, which, for us, is almost never a problem. You can override this I think by setting some fast-math flag in gcc for example. See about something like that for MSVC
 	// windowWidth / 2.0f is necessary even though we have halfWindowWidth already because this one is more exact because floats, which is necessary for rayOrigin. TODO: Make sure that statement is true.
 }
 
@@ -28,7 +28,7 @@ bool Renderer::loadCameraRot(Vector3f cameraRot) {
 }
 
 bool Renderer::loadCamera(Camera camera, unsigned int windowWidth, unsigned int windowHeight) {
-	DeviceCamera deviceCamera(camera.pos, calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), camera.nearPlane);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
+	DeviceCamera deviceCamera(camera.pos, calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), 0);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(DeviceCamera), &deviceCamera);
 	if (err != CL_SUCCESS) { return false; }
 	return loadCameraRot(camera.rot);

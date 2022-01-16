@@ -59,14 +59,14 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	int2 coords = (int2)(x, get_global_id(1));
 
 	// NOTE: Z coords go out of the screen towards the viewer.
-	float3 pixelPos = (float3)(coords.x - (int)windowWidth / 2, -(coords.y - (int)windowHeight / 2), camera.nearPlane);
+	float3 pixelPos = (float3)(coords.x - (int)windowWidth / 2, -(coords.y - (int)windowHeight / 2), 0);
 	camera.rayOrigin.x = 0;
 	camera.rayOrigin.y = 0;
 	float3 ray = pixelPos - camera.rayOrigin;
 	ray = normalize(ray);
 	ray = multMatFloat3(cameraRot, ray);
 	camera.rayOrigin = multMatFloat3(cameraRot, ray);
-	camera.rayOrigin += camera.pos;
+	camera.rayOrigin = camera.pos;
 
 	// Intersection test with the blackhole black body.
 	// TODO: If you get a tangent vector between the ray origin and the edge of the blackhole black body, then you don't have to do this complicated quadratic stuff, you can just run a dot product between the ray and the vector between ray origin and blackhole middle and compare it to aforementioned vector. You'll basically be making use out of the rotation of the viewport and saving processing power I think.
