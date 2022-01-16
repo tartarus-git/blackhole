@@ -59,9 +59,13 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	int2 coords = (int2)(x, get_global_id(1));
 
 	// NOTE: Z coords go out of the screen towards the viewer.
-	float3 ray = (float3)(coords.x, coords.y, camera.nearPlane) - camera.rayOrigin;
+	float3 pixelPos = (float3)(coords.x - (int)windowWidth / 2, -(coords.y - (int)windowHeight / 2), camera.nearPlane);
+	camera.rayOrigin.x = 0;
+	camera.rayOrigin.y = 0;
+	float3 ray = pixelPos - camera.rayOrigin;
 	ray = normalize(ray);
 	ray = multMatFloat3(cameraRot, ray);
+	camera.rayOrigin = multMatFloat3(cameraRot, ray);
 	camera.rayOrigin += camera.pos;
 
 	// Intersection test with the blackhole black body.
@@ -69,12 +73,18 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	// The above will also be super useful when calculating the light shell around the black body.
 
 	// For now, we're doing it like this:
-	float3 sum = camera.rayOrigin - blackhole.pos;
-	float3 p = -sum / ray;
-	float3 q2 = (camera.rayOrigin - blackhole.pos);
-	float q = (dot(q2, q2) - blackhole.blackRadius * blackhole.blackRadius) / dot(ray, ray);
+	//float3 sum = camera.rayOrigin - blackhole.pos;
+	//float3 p = -sum / ray;
+	//float3 q2 = (camera.rayOrigin - blackhole.pos);
+	//float q = (dot(q2, q2) - blackhole.blackRadius * blackhole.blackRadius) / dot(ray, ray);
 	// TODO: The following is plagarized, you should figure it out for yourself. In order to do that you have to establish basic algebraic rules for vectors, shouldn't be hard. Then do some basic quadratic stuff.
-	if (dot(dot(ray, camera.rayOrigin - blackhole.pos), dot(ray, camera.rayOrigin - blackhole.pos)) - dot(camera.rayOrigin - blackhole.pos, camera.rayOrigin - blackhole.pos) + blackhole.blackRadius * blackhole.blackRadius >= 0) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }		// Hit the black hole.
+	//if (dot(dot(ray, camera.rayOrigin - blackhole.pos), dot(ray, camera.rayOrigin - blackhole.pos)) - dot(camera.rayOrigin - blackhole.pos, camera.rayOrigin - blackhole.pos) + blackhole.blackRadius * blackhole.blackRadius >= 0) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }		// Hit the black hole.
+
+
+	float3 toBlackhole = blackhole.pos - camera.rayOrigin;
+	float3 fromBlackhole = -toBlackhole;
+	float targetDot = (dot(fromBlackhole, fromBlackhole) - blackhole.blackRadius * blackhole.blackRadius); 
+	if (dot(ray, fromBlackhole) * dot(ray, fromBlackhole) >= targetDot) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 
 
 	uint3 color = skyboxSample(skybox, ray);
