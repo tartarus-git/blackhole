@@ -39,17 +39,18 @@ public:
 		result.x = cosine * x - sine * z;
 		result.z = sine * x + cosine * z;
 
-		cosine = cos(rot.y);
-		sine = sin(rot.y);
+		cosine = cos(-rot.y);
+		sine = sin(-rot.y);
 		result.y = cosine * y - sine * result.z;
 		result.z = sine * y + cosine * result.z;
 
 
 
-		cosine = cos(rot.z);
+		/*cosine = cos(rot.z);
 		sine = sin(rot.z);
+		float xBefore = result.x;
 		result.x = cosine * result.x - sine * result.y;
-		result.y = sine * result.x + cosine * result.y;
+		result.y = sine * xBefore + cosine * result.y;*/
 
 		return result;
 	}

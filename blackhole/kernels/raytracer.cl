@@ -84,7 +84,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	float3 toBlackhole = blackhole.pos - camera.rayOrigin;
 	float3 fromBlackhole = -toBlackhole;
 	float targetDot = (dot(fromBlackhole, fromBlackhole) - blackhole.blackRadius * blackhole.blackRadius); 
-	if (dot(ray, fromBlackhole) * dot(ray, fromBlackhole) >= targetDot) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+	if (dot(ray, fromBlackhole) < 0 && dot(ray, fromBlackhole) * dot(ray, fromBlackhole) >= targetDot) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 
 
 	uint3 color = skyboxSample(skybox, ray);
