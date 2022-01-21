@@ -34,16 +34,15 @@ public:
 	Vector3f rotate(Vector3f rot) noexcept {			// NOTE: This should be constexpr but the trig functions don't allow that for some reason. Can't write our own because the trig functions might be optimized for each platform and writing our own would lose us performance.
 		Vector3f result;
 
-		float cosine = cos(rot.x);
-		float sine = sin(rot.x);
-		result.x = cosine * x - sine * z;
-		result.z = sine * x + cosine * z;
+		float cosine = cos(-rot.y);
+		float sine = sin(-rot.y);
+		result.y = cosine * y - sine * z;
+		result.z = sine * y + cosine * z;
 
-		cosine = cos(-rot.y);
-		sine = sin(-rot.y);
-		result.y = cosine * y - sine * result.z;
-		result.z = sine * y + cosine * result.z;
-
+		cosine = cos(rot.x);
+		sine = sin(rot.x);
+		result.x = cosine * x - sine * result.z;
+		result.z = sine * x + cosine * result.z;
 
 
 		/*cosine = cos(rot.z);

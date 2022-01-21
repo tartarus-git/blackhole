@@ -69,8 +69,6 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 	camera.rayOrigin = camera.pos;
 
 	// Intersection test with the blackhole black body.
-	// TODO: If you get a tangent vector between the ray origin and the edge of the blackhole black body, then you don't have to do this complicated quadratic stuff, you can just run a dot product between the ray and the vector between ray origin and blackhole middle and compare it to aforementioned vector. You'll basically be making use out of the rotation of the viewport and saving processing power I think.
-	// The above will also be super useful when calculating the light shell around the black body.
 
 	// For now, we're doing it like this:
 	//float3 sum = camera.rayOrigin - blackhole.pos;
@@ -82,9 +80,10 @@ __kernel void raytracer(__write_only image2d_t outputFrame, unsigned int windowW
 
 
 	float3 toBlackhole = blackhole.pos - camera.rayOrigin;
+	if (toBlackhole.x * toBlackhole.x + toBlackhole.y * toBlackhole.y + toBlackhole.z * toBlackhole.z <= blackhole.blackRadius * blackhole.blackRadius) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }		// Needed for when your inside the blackhole because the dot product method that follows doesn't handle being inside the blackhole well at all.
 	float3 fromBlackhole = -toBlackhole;
 	float targetDot = (dot(fromBlackhole, fromBlackhole) - blackhole.blackRadius * blackhole.blackRadius); 
-	if (dot(ray, fromBlackhole) < 0 && dot(ray, fromBlackhole) * dot(ray, fromBlackhole) >= targetDot) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+	if (dot(ray, fromBlackhole) <= 0 && dot(ray, fromBlackhole) * dot(ray, fromBlackhole) >= targetDot) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 
 
 	uint3 color = skyboxSample(skybox, ray);

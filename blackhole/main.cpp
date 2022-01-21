@@ -27,6 +27,8 @@ namespace keys {
 	bool a = false;
 	bool s = false;
 	bool d = false;
+	bool space = false;
+	bool ctrl = false;
 }
 
 Camera camera;
@@ -63,6 +65,8 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case KEY_A: keys::a = true; return 0;
 			case KEY_S: keys::s = true; return 0;
 			case KEY_D: keys::d = true; return 0;
+			case VK_SPACE: keys::space = true; return 0;
+			case VK_CONTROL: keys::ctrl = true; return 0;
 			case VK_ESCAPE: captureMouse = !captureMouse; return 0;
 			}
 		}
@@ -74,8 +78,11 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case KEY_A: keys::a = false; return 0;
 			case KEY_S: keys::s = false; return 0;
 			case KEY_D: keys::d = false; return 0;
+			case VK_SPACE: keys::space = false; return 0;
+			case VK_CONTROL: keys::ctrl = false; return 0;
 			}
 		}
+		return 0;
 	default:
 		if (listenForBoundsChange(uMsg, wParam, lParam)) { return 0; }
 		if (listenForExitAttempts(uMsg, wParam, lParam)) { return 0; }
@@ -333,6 +340,8 @@ void graphicsLoop() {
 			if (keys::a) { moveVector.x -= MOVE_SENSITIVITY; }
 			if (keys::s) { moveVector.z += MOVE_SENSITIVITY; }
 			if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
+			if (keys::space) { moveVector.y += MOVE_SENSITIVITY; }
+			if (keys::ctrl) { moveVector.y -= MOVE_SENSITIVITY; }
 			camera.move(moveVector);
 
 			if (!renderer.loadCamera(camera, windowWidth, windowHeight)) {

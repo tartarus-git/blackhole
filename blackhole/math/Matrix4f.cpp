@@ -39,7 +39,7 @@ Matrix4f Matrix4f::createRotationMat(float x, float y, float z) noexcept {
 	xyMat[2][2] = 1;
 	xyMat[3][3] = 1;
 
-	return xyMat * zyMat * zxMat;
+	return zyMat * zxMat * xyMat;
 }
 
 Matrix4f Matrix4f::createRotationMat(Vector3f rot) noexcept {
