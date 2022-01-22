@@ -9,7 +9,7 @@ public:
 	float blackRadius;
 	float influenceRadius;
 
-	Blackhole() = default;
-	Blackhole(Vector4f pos, float blackRadius, float influenceRadius) : pos(pos), blackRadius(blackRadius), influenceRadius(influenceRadius) { }
+	constexpr Blackhole() = default;
+	constexpr Blackhole(Vector4f pos, float blackRadius, float influenceRadius) noexcept : pos(pos), blackRadius(blackRadius), influenceRadius(influenceRadius) { }
 };
 

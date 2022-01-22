@@ -9,7 +9,7 @@ public:
 	float y;
 	float z;
 
-	Vector3f() = default;
+	constexpr Vector3f() = default;
 	constexpr Vector3f(float x, float y, float z) noexcept : x(x), y(y), z(z) { }
 
 	constexpr Vector3f operator-() const noexcept { return Vector3f(-x, -y, -z); }							// Constexpr functions have to be defined and implemented in the header because or else, the compiler can't calculate compile-time constants from every translation unit (because linking comes after compiling).
