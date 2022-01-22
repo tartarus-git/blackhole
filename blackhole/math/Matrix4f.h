@@ -10,7 +10,7 @@ public:
 		friend class Matrix4f;
 
 		float data[16];
-		char x;						// TODO: Because of this here, indexing into the same Matrix from different threads isn't thread safe anymore. See what you can do about that. Are atomics worth it here? Do they make the whole thing a little slower, because we can't be having that.
+		char x;									// IMPORTANT: Because of this, indexing into the same matrix from different threads is no longer thread-safe. That means that reading the value of a matrix element isn't thread-safe and can be totally unreliable.
 
 	public:
 		constexpr float& operator=(const Matrix4fColumn& other) noexcept { data[x] = other.data[other.x]; return data[x]; }
@@ -23,7 +23,8 @@ public:
 
 	constexpr Matrix4f() noexcept = default;
 
-	constexpr Matrix4f& operator=(const Matrix4f& other) { std::copy(other.IndexReturn.data, other.IndexReturn.data + 16, IndexReturn.data); return *this; }
+	// NOTE: I've seen a benchmark somewhere that said that memcpy is way faster than std::copy, but only in debug mode. In release mode, the compiler most likely optimizes std::copy so that it is the same performance. That's why we're not going to branch on consteval and use both in this function.
+	constexpr Matrix4f& operator=(const Matrix4f& other) { std::copy(other.IndexReturn.data, other.IndexReturn.data + 16, IndexReturn.data); return *this; memcpy(nullptr, nullptr, 0); }
 	constexpr Matrix4f(const Matrix4f& other) { *this = other; }
 
 	constexpr Matrix4f& operator=(Matrix4f&& other) { *this = other; return *this; }
