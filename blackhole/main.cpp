@@ -329,7 +329,7 @@ void graphicsLoop() {
 
 			if (pendingMouseMove) {
 				camera.rot.x += mouseTotalX * LOOK_SENSITIVITY_X;			// TODO: Probably prevent this from overflowing by checking if the rot changes break 2pi boundaries and then subtracting by camera.rot.x / 2pi.
-				camera.rot.y += mouseTotalY * LOOK_SENSITIVITY_Y;
+				camera.rot.y -= mouseTotalY * LOOK_SENSITIVITY_Y;
 				mouseTotalX = 0;
 				mouseTotalY = 0;
 				pendingMouseMove = false;

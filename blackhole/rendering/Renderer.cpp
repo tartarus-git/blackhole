@@ -21,7 +21,7 @@ Vector3f calculateRayOrigin(float nearPlane, float FOV, unsigned int windowWidth
 }
 
 bool Renderer::loadCameraRot(Vector3f cameraRot) {
-	Matrix4f rot = Matrix4f::createRotationMat(cameraRot.x, -cameraRot.y, cameraRot.z);
+	Matrix4f rot = Matrix4f::createRotationMat(cameraRot.x, cameraRot.y, cameraRot.z);
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX + 1, 16 * sizeof(float), &rot);
 	if (err != CL_SUCCESS) { return false; }
 	return true;
