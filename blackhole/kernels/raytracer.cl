@@ -64,6 +64,6 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 	float rayBlackholeDot = dot(ray, fromBlackhole);
 	if (rayBlackholeDot <= 0 && rayBlackholeDot * rayBlackholeDot >= blackholeBlackDotProduct) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 
-	//write_imageui(outputFrame, coords, (uint4)((uint)(ray.x * 100), (uint)(ray.y * 100), (uint)(ray.z * 100), 255));
-	write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
+	write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
+	//write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
 }

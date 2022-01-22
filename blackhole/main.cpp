@@ -205,7 +205,7 @@ void graphicsLoop() {
 			windowResized = false;			// Doing this at beginning leaves space for size event handler to set it to true again while we're recallibrating, which minimizes the chance that the window gets stuck with a drawing surface that doesn't match it's size.
 			updateWindowSizeVars();			// NOTE: The chance that something goes wrong with the above is astronomically low and basically zero because size events get fired after resizing is done and user can't start and stop another size move fast enough to trip us up.
 
-			if (renderer.recallibrateAfterWindowResize(windowWidth, windowHeight)) {
+			if (!renderer.recallibrateAfterWindowResize(windowWidth, windowHeight)) {
 				debuglogger::out << debuglogger::error << "failed to recallibrate renderer after window resize" << debuglogger::endl;
 				POST_THREAD_EXIT; renderer.release(); return;
 			}
