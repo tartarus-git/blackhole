@@ -47,10 +47,9 @@ public:
 
 	constexpr Matrix4f operator*(Matrix4f& other) noexcept {
 		Matrix4f result;
-		for (uint8_t y = 0; y < 4; y++) {				// TODO: This nested loop stuff could be optimized I think. Specifically by removing level var I think.
-			uint8_t level = y * 4;
+		for (uint8_t y = 0; y < 16; y += 4) {
 			for (uint8_t x = 0; x < 4; x++) {
-				result[level + x] = (*this)[level] * other[x][0] + (*this)[level + 1] * other[x][1] + (*this)[level + 2] * other[x][2] + (*this)[level + 3] * other[x][3];
+				result[y + x] = (*this)[y] * other[x][0] + (*this)[y + 1] * other[x][1] + (*this)[y + 2] * other[x][2] + (*this)[y + 3] * other[x][3];
 			}
 		}
 		return result;
