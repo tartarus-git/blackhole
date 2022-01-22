@@ -10,6 +10,6 @@ public:
 	float influenceRadius;
 
 	Blackhole() = default;
-	Blackhole(Vector3f pos, float blackRadius, float influenceRadius) : pos(pos), blackRadius(blackRadius), influenceRadius(influenceRadius) { }
+	Blackhole(Vector4f pos, float blackRadius, float influenceRadius) : pos(pos), blackRadius(blackRadius), influenceRadius(influenceRadius) { }
 };
 

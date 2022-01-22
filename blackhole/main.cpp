@@ -254,7 +254,7 @@ void graphicsLoop() {
 			POST_THREAD_EXIT;
 			goto OpenCLRelease_all;
 		}
-		Blackhole blackhole = Blackhole(Vector3f(0, 0, -20), 15, 20);
+		Blackhole blackhole = Blackhole(Vector4f(0, 0, -20, 1), 15, 20);
 		if (!renderer.loadBlackhole(&blackhole)) {
 			debuglogger::out << debuglogger::error << "failed to load black hole into compute device" << debuglogger::endl;
 			POST_THREAD_EXIT;

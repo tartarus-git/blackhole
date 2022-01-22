@@ -28,7 +28,7 @@ bool Renderer::loadCameraRot(Vector3f cameraRot) {
 }
 
 bool Renderer::loadCamera(Camera camera, unsigned int windowWidth, unsigned int windowHeight) {
-	DeviceCamera deviceCamera(camera.pos, calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), 0);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
+	DeviceCamera deviceCamera(Vector4f(camera.pos, 1), Vector4f(calculateRayOrigin(camera.nearPlane, camera.FOV, windowWidth, windowHeight), 1), 0);			// TODO: Reloading the whole device camera everytime the user resizes the display seems kind of stupid. Fix that eventually.
 	cl_int err = clSetKernelArg(compute::kernel, RENDERER_ARGS_START_INDEX, sizeof(DeviceCamera), &deviceCamera);
 	if (err != CL_SUCCESS) { return false; }
 	return loadCameraRot(camera.rot);

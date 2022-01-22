@@ -25,5 +25,5 @@ public:
 	float nearPlane;
 
 	DeviceCamera() = default;
-	DeviceCamera(Vector3f pos, Vector3f rayOrigin, float nearPlane) : pos(pos), rayOrigin(rayOrigin), nearPlane(nearPlane) { }
+	DeviceCamera(Vector4f pos, Vector4f rayOrigin, float nearPlane) : pos(pos), rayOrigin(rayOrigin), nearPlane(nearPlane) { }
 };
