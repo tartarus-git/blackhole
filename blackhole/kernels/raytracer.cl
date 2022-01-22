@@ -59,8 +59,8 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 	ray = multiplyMatWithFloat3(cameraRot, ray);
 
 // TODO: Go through the math that is needed for the following part again.
-	//if (toBlackhole.x * toBlackhole.x + toBlackhole.y * toBlackhole.y + toBlackhole.z * toBlackhole.z <= blackhole.blackRadius * blackhole.blackRadius) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }		// Needed for when your inside the blackhole because the dot product method that follows doesn't handle being inside the blackhole well at all.
-	float3 fromBlackhole = cameraPos - blackholePos;
+	if (blackholeBlackDotProduct <= 0) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+	float3 fromBlackhole = cameraPos - blackholePos;	// TODO: No reason to do this here. Do it on host.
 	float rayBlackholeDot = dot(ray, fromBlackhole);
 	if (rayBlackholeDot <= 0 && rayBlackholeDot * rayBlackholeDot >= blackholeBlackDotProduct) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 
