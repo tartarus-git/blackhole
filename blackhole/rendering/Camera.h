@@ -9,21 +9,10 @@ public:
 	Vector3f pos;
 	Vector3f rot;
 	
-	float nearPlane;
 	float FOV;
 
-	Camera() = default;
-	Camera(Vector3f pos, Vector3f rot, float nearPlane, float FOV) : pos(pos), rot(rot), nearPlane(-nearPlane), FOV(FOV) { }			// TODO: Probs put this in implementation file.
+	constexpr Camera() = default;
+	constexpr Camera(Vector3f pos, Vector3f rot, float FOV) noexcept : pos(pos), rot(rot), FOV(FOV) { }
 
-	void move(Vector3f move);
-};
-
-class DeviceCamera {
-public:
-	Vector4f pos;								// NOTE: Vector4f's are being used here instead of Vector3f's because OpenCL uses float4 even when you tell it to use float3, which the CPU has to accomodate when transferring data.
-	Vector4f rayOrigin;
-	float nearPlane;
-
-	DeviceCamera() = default;
-	DeviceCamera(Vector4f pos, Vector4f rayOrigin, float nearPlane) : pos(pos), rayOrigin(rayOrigin), nearPlane(nearPlane) { }
+	void move(Vector3f move) noexcept;
 };

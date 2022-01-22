@@ -36,12 +36,6 @@
     <ClCompile Include="math\Vector3f.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rendering\Skybox.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="objects\Blackhole.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="math\Matrix4f.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

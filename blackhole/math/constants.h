@@ -1,5 +1,3 @@
 #pragma once
 
-namespace constants {
-	const double pi = 3.14159265358979323846;
-}
+#define CONSTANTS_PI 3.14159265358979323846f

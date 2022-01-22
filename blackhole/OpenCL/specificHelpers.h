@@ -5,6 +5,7 @@
 
 // This is a collection of data and functions. The functions are here because of generalization.
 // The data is here so everything can easily access it (and also because of generalization).
+// A lot of other stuff is also generalized inside of Renderer class because I felt it was more specific than specificHelpers.
 namespace compute {
 	inline cl_platform_id platform;
 	inline cl_device_id device;
@@ -22,6 +23,7 @@ namespace compute {
 	cl_int setupDevice(const char* sourceFile, const char* kernelName, std::string& buildLog);
 	cl_int releaseDeviceVars();
 
+	inline const cl_image_format outputFrameFormat = { CL_RGBA, CL_UNSIGNED_INT8 };
 	inline cl_mem outputFrame;
 
 	inline size_t globalSize[2];

@@ -152,7 +152,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="math\Matrix4f.cpp" />
-    <ClCompile Include="objects\Blackhole.cpp" />
     <ClCompile Include="rendering\Camera.cpp" />
     <ClCompile Include="logging\debugOutput.cpp" />
     <ClCompile Include="main.cpp" />
@@ -160,7 +159,6 @@
     <ClCompile Include="OpenCL\specificHelpers.cpp" />
     <ClCompile Include="rendering\Renderer.cpp" />
     <ClCompile Include="math\Vector3f.cpp" />
-    <ClCompile Include="rendering\Skybox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="math\constants.h" />

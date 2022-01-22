@@ -135,7 +135,7 @@ char* readFromSourceFile(const char* sourceFile) {
 
 cl_int setupComputeKernel(cl_context context, cl_device_id device, const char* sourceFile, const char* kernelName, cl_program& program, cl_kernel& kernel, size_t& kernelWorkGroupSize, std::string& buildLog) {
 	cl_program cachedProgram;																																// We cache the values in case the compiler resorts to pointers instead of references. In that case, caching will be more efficient.
-	cl_kernel cachedKernel;
+	cl_kernel cachedKernel;				// TODO: Remove these caches, they're useless.
 	size_t cachedKernelWorkGroupSize;
 
 	char* kernelSource = readFromSourceFile(sourceFile);																									// Read source code from file.

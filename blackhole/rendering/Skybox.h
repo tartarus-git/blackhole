@@ -6,8 +6,4 @@ class Skybox
 {
 public:
 	Vector3f test;
-
-	Skybox() = default;
-
 };
-

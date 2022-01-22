@@ -55,6 +55,9 @@ public:
 		return result;
 	}
 
+	static void updateRotationMat(Matrix4f& mat, float x, float y, float z) noexcept;
+	static void updateRotationMat(Matrix4f& mat, Vector3f rot) noexcept;
+
 	static Matrix4f createRotationMat(float x, float y, float z) noexcept;			// NOTE: Can't be constexpr because built-in trig functions are not constexpr. You could use if consteval or something inside the body to use custom made, constexpr trig functions at compile time. TODO
 	static Matrix4f createRotationMat(Vector3f rot) noexcept;
 };

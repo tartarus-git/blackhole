@@ -27,7 +27,7 @@ namespace compute {
 		err = initOpenCLVarsForBestDevice("OpenCL 3.0 ", platform, device, context, commandQueue);
 		if (err != CL_SUCCESS) { freeOpenCLLib(); return err; }
 
-		err = setupComputeKernel(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);				// TODO: Make sure this is in a released state when it fails as a qaruantee.
+		err = setupComputeKernel(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);
 		if (err != CL_SUCCESS) { releaseContextVars(); freeOpenCLLib(); return err; }
 	}
 

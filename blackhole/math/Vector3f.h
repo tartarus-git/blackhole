@@ -22,6 +22,9 @@ public:
 
 	constexpr Vector3f operator+(const Vector3f& other) const noexcept { return Vector3f(x + other.x, y + other.y, z + other.z); }
 	constexpr Vector3f& operator+=(const Vector3f& other) noexcept { *this = *this + other; return *this; }
+	constexpr Vector3f operator-(const Vector3f& other) const noexcept { return Vector3f(x - other.x, y - other.y, z - other.z); }
+
+	constexpr float operator%(const Vector3f& other) const noexcept { return x * other.x + y * other.y + z * other.z; }
 
 	Vector3f rotate(const Vector3f& other) const noexcept;
 };

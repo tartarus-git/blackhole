@@ -2,10 +2,21 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <windowsx.h>
+#include <windowsx.h>									// For GET_X_LPARAM and GET_Y_LPARAM
 
 #include "logging/debugOutput.h"
+
 #include <thread>
+
+enum class KeyboardKeys {
+	w = 0x57,
+	a = 0x41,
+	s = 0x53,
+	d = 0x44,
+	space = VK_SPACE,
+	ctrl = VK_CONTROL,
+	escape = VK_ESCAPE
+};
 
 HWND hWnd;
 
