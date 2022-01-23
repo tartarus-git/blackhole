@@ -240,7 +240,7 @@ void graphicsLoop() {
 		if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
 		if (keys::space) { moveVector.y += MOVE_SENSITIVITY; }
 		if (keys::ctrl) { moveVector.y -= MOVE_SENSITIVITY; }
-		camera.move(moveVector);
+		camera.move(moveVector);			// TODO: Is there really a reason to use custom vector rotation code when you can just pipe the vec through cameraRotMat? Do that.
 
 		if (!renderer.loadCameraPos(&camera.pos)) { debuglogger::out << debuglogger::error << "failed to load new camera position" << debuglogger::endl; EXIT_FROM_THREAD; }
 		cameraRotMat = Matrix4f::createRotationMat(camera.rot);
