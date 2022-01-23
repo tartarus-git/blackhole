@@ -141,5 +141,6 @@ bool Renderer::render(char* outputFrame) const {
 	if (clEnqueueReadImage(compute::commandQueue, compute::outputFrame, true, compute::frameOrigin, compute::frameRegion, 0, 0, outputFrame, 0, nullptr, nullptr) != CL_SUCCESS) {
 		debuglogger::out << debuglogger::error << "failed to read outputFrame_computeImage from compute device" << debuglogger::endl; return false;
 	}
+	// IMPORTANT TODO: You completely forgot to use clFinish here, but you have to, or else the CPU could start writing garbage to the screen.
 	return true;
 }
