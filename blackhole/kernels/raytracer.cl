@@ -44,13 +44,21 @@ uint3 skyboxSample(Skybox skybox, float3 normVec) {
 	return result;
 }
 
-#define G 1
-#define RAD 25
+inline void calculateRayBlackholeCollisionDist(float3 origin, float3 ray, float3 fromBlackholeVec, float placeholder) {
+	float rayBlackholeDot = dot(ray, fromBlackholeVev);
+	if (rayBlackholeDot <= 0 && rayBlackholeDot * rayBlackholeDot >= placeholder) {}
+}
 
-void simulateLight(float3 origin, float3 ray, float vel, float3 blackholePos, float blackholeMass, uint stepCount, int2 coords, __write_only image2d_t outputFrame, Skybox skybox) {
+inline void calculateRayBlackholeDiscCollisionDist(float3 origin, float3 ray, float3 blackholePos, float3 blackholeDiscRadius) {
+
+}
+
+inline void simulateLight(float3 origin, float3 ray, float rayVel, float3 fromBlackholeVec, float3 blackholePos, float blackholeBlackRadius, float blackholeMass, float blackholeDiscRadius, uint stepCount, Skybox skybox, __write_only image2d_t outputFrame, int2 coords) {
 	ray *= vel;
+
+	float fromBlackholeVecDistSquared = dot(fromBlackholeVec, fromBlackholeVec);					// TODO: Does normalize use sqrt behind the scenes. If it doesn't, then the way I'm calculating inside of the for loop is probably suboptimal.
 	for (uint i = 0; i < stepCount; i++) {
-			if ((blackholePos.y - origin.y < 0 && blackholePos.y - (origin + ray).y > 0) || (blackholePos.y - origin.y > 0 && blackholePos.y - (origin + ray).y < 0)) {
+			/*if ((blackholePos.y - origin.y < 0 && blackholePos.y - (origin + ray).y > 0) || (blackholePos.y - origin.y > 0 && blackholePos.y - (origin + ray).y < 0)) {
 				float diffheight = blackholePos.y - origin.y;
 				float3 tempray = ray;
 				diffheight = diffheight / tempray.y;
@@ -60,56 +68,45 @@ void simulateLight(float3 origin, float3 ray, float vel, float3 blackholePos, fl
 				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z < RAD * RAD) {
 					write_imageui(outputFrame, coords, (uint4)(255, 255, 255, 255)); return;
 				}
-			}
-	
-		ray += normalize(blackholePos - origin) * (G * blackholeMass / dot(origin - blackholePos, origin - blackholePos));
-		origin += ray;
-	}
-	ray = normalize(ray);					// TODO: This simulateLight function isn't super awesome because it doesn't check if the light rays intersect with the blackhole black body. Most of the time, they don't, but it'd be more realistic if they could.
+			}*/
 
-	float diffheight = blackholePos.y - origin.y;
-				float3 tempray = ray;
-				diffheight = diffheight / tempray.y;
-				tempray *= diffheight;
-				if (dot(normalize(tempray), ray) <= 0) { write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255)); return; }
-				float3 diffVec = origin + tempray - blackholePos;
-				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z <= 15 * 15) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
-				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z < RAD * RAD) {
-					write_imageui(outputFrame, coords, (uint4)(255, 255, 255, 255)); return;
-				}
+		float distToBlackhole = calculateRayBlackholeCollisionDist(origin, ray, blackholePos, blackholeBlackRadius);
+		float distToBlackholeDisc = calculateRayBlackholeDiscCollisionDist(origin, ray, blackholePos, blackholeDiscRadius);
+		if (distToBlackhole < distToBlackholeDisc) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); } else { write_imageui(outputFrame, coords, (uint4)(255, 255, 255, 255)); }
+
+		ray -= blackholeMass / fromBlackholeVecDistSquared / sqrt(fromBlackholeVecDistSquared) * fromBlackHoleVec;			// TODO: Look into the different types of sqrt in opencl.
+		origin += ray;
+		fromBlackholeVec += ray;
+		fromBlackholeVecDistSquared = dot(fromBlackholeVec, fromBlackholeVec);
+	}
+
+	// TODO: This is the place for the final collision tests on blackhole and disc.
 
 	//write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
 	write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
 }
 
-__kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int windowHeight, 
+__kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int windowHeight, float halfWindowWidth, float halfWindowHeight, 
 							float3 cameraPos, float rayOrigin, Matrix4f cameraRot, 
 							Skybox skybox, 
-							float3 blackholePos, float blackholeBlackDotProduct, float blackholeInfluenceDotProduct) {
+							float3 blackholePos, float3 fromBlackholeVec, float blackHoleAttraction, float blackholeBlackRadius, float blackholeInfluenceRadius, float blackholeBlackSquaredDotProduct, float blackholeInfluenceSquaredDotProduct) {
 	int x = get_global_id(0);
 	if (x >= windowWidth) { return; }
 	int2 coords = (int2)(x, get_global_id(1));
 
 	// NOTE: Z coords go out of the screen towards the viewer.
 
-	// TODO: No reason to keep dividing the window sizes by two every kernel run. Preprocess on host.
-	float3 ray = normalize((float3)(coords.x - windowWidth / 2, windowHeight / 2 - coords.y, 0) - (float3)(0, 0, rayOrigin));
-	ray = multiplyMatWithFloat3(cameraRot, ray);
+	float3 ray = multiplyMatWithFloat3(normalize((float3)(coords.x - halfWindowWidth, halfWindowHeight - coords.y, -rayOrigin)));
 
-// TODO: Go through the math that is needed for the following part again.
-	if (blackholeInfluenceDotProduct <= 0) {
-		if (blackholeBlackDotProduct <= 0) {
-			write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return;
-		}
+	// TODO: Go through the math that is needed for the following part again.
 
-	}
-	float3 fromBlackhole = cameraPos - blackholePos;	// TODO: No reason to do this here. Do it on host.
-	float rayBlackholeDot = dot(ray, fromBlackhole);					// TODO: blackholeBlackDotProduct should be renamed to squared dot product should it not?
-	if (rayBlackholeDot <= 0) {
+	if (blackholeBlackSquaredDotProduct <= 0) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); }				// TODO: Think about if there is a way to get rid of this branch. Does the math that follows take care of it for us?
+
+	/*if (rayBlackholeDot <= 0) {
 		if (rayBlackholeDot * rayBlackholeDot >= blackholeBlackDotProduct) { }//write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
 		if (rayBlackholeDot * rayBlackholeDot >= blackholeInfluenceDotProduct) {
 		}
-	}
+	}*/
 	simulateLight(cameraPos, ray, 5, blackholePos, 1000, 50, coords, outputFrame, skybox); return;
 
 	//write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
