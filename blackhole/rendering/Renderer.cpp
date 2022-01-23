@@ -125,9 +125,11 @@ bool Renderer::loadBlackholePos(const Vector3f* blackholePos) const { return clS
 
 bool Renderer::loadBlackholeDotProducts(const Vector3f& cameraPos, const Blackhole& blackhole) const {
 	Vector3f fromBlackhole = cameraPos - blackhole.pos;
-	float blackDotProduct = (fromBlackhole % fromBlackhole) - blackhole.blackRadius * blackhole.blackRadius;
-	if (clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 5, sizeof(float), &blackDotProduct) != CL_SUCCESS) { return false; }
-	return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &blackDotProduct) == CL_SUCCESS;
+	float fromBlackholeLenSquared = fromBlackhole % fromBlackhole;
+	float dotProduct = fromBlackholeLenSquared - blackhole.blackRadius * blackhole.blackRadius;
+	if (clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 5, sizeof(float), &dotProduct) != CL_SUCCESS) { return false; }
+	dotProduct = fromBlackholeLenSquared - blackhole.influenceRadius * blackhole.influenceRadius;
+	return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &dotProduct) == CL_SUCCESS;
 }
 
 // TODO: Obviously move all this around to reflect the order in the header file.

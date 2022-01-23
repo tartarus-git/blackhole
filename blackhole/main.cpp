@@ -165,7 +165,7 @@ void graphicsLoop() {
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
 
-	Blackhole blackhole = Blackhole(Vector3f(0, 0, -20), 15, 20);
+	Blackhole blackhole = Blackhole(Vector3f(0, 0, -20), 15, 30);
 	if (!renderer.loadBlackholePos(&blackhole.pos)) {
 		debuglogger::out << debuglogger::error << "failed to load black hole position into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT; renderer.release(); return;

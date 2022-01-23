@@ -44,6 +44,44 @@ uint3 skyboxSample(Skybox skybox, float3 normVec) {
 	return result;
 }
 
+#define G 1
+#define RAD 25
+
+void simulateLight(float3 origin, float3 ray, float vel, float3 blackholePos, float blackholeMass, uint stepCount, int2 coords, __write_only image2d_t outputFrame, Skybox skybox) {
+	ray *= vel;
+	for (uint i = 0; i < stepCount; i++) {
+			if ((blackholePos.y - origin.y < 0 && blackholePos.y - (origin + ray).y > 0) || (blackholePos.y - origin.y > 0 && blackholePos.y - (origin + ray).y < 0)) {
+				float diffheight = blackholePos.y - origin.y;
+				float3 tempray = ray;
+				diffheight = diffheight / tempray.y;
+				tempray *= diffheight;
+				float3 diffVec = origin + tempray - blackholePos;
+				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z <= 15 * 15) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z < RAD * RAD) {
+					write_imageui(outputFrame, coords, (uint4)(255, 255, 255, 255)); return;
+				}
+			}
+	
+		ray += normalize(blackholePos - origin) * (G * blackholeMass / dot(origin - blackholePos, origin - blackholePos));
+		origin += ray;
+	}
+	ray = normalize(ray);					// TODO: This simulateLight function isn't super awesome because it doesn't check if the light rays intersect with the blackhole black body. Most of the time, they don't, but it'd be more realistic if they could.
+
+	float diffheight = blackholePos.y - origin.y;
+				float3 tempray = ray;
+				diffheight = diffheight / tempray.y;
+				tempray *= diffheight;
+				if (dot(normalize(tempray), ray) <= 0) { write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255)); return; }
+				float3 diffVec = origin + tempray - blackholePos;
+				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z <= 15 * 15) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+				if (diffVec.x * diffVec.x + diffVec.z * diffVec.z < RAD * RAD) {
+					write_imageui(outputFrame, coords, (uint4)(255, 255, 255, 255)); return;
+				}
+
+	//write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
+	write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
+}
+
 __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int windowHeight, 
 							float3 cameraPos, float rayOrigin, Matrix4f cameraRot, 
 							Skybox skybox, 
@@ -59,11 +97,21 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 	ray = multiplyMatWithFloat3(cameraRot, ray);
 
 // TODO: Go through the math that is needed for the following part again.
-	if (blackholeBlackDotProduct <= 0) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
-	float3 fromBlackhole = cameraPos - blackholePos;	// TODO: No reason to do this here. Do it on host.
-	float rayBlackholeDot = dot(ray, fromBlackhole);
-	if (rayBlackholeDot <= 0 && rayBlackholeDot * rayBlackholeDot >= blackholeBlackDotProduct) { write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+	if (blackholeInfluenceDotProduct <= 0) {
+		if (blackholeBlackDotProduct <= 0) {
+			write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return;
+		}
 
-	write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
-	//write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
+	}
+	float3 fromBlackhole = cameraPos - blackholePos;	// TODO: No reason to do this here. Do it on host.
+	float rayBlackholeDot = dot(ray, fromBlackhole);					// TODO: blackholeBlackDotProduct should be renamed to squared dot product should it not?
+	if (rayBlackholeDot <= 0) {
+		if (rayBlackholeDot * rayBlackholeDot >= blackholeBlackDotProduct) { }//write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255)); return; }
+		if (rayBlackholeDot * rayBlackholeDot >= blackholeInfluenceDotProduct) {
+		}
+	}
+	simulateLight(cameraPos, ray, 5, blackholePos, 1000, 50, coords, outputFrame, skybox); return;
+
+	//write_imageui(outputFrame, coords, (uint4)((uint)(fabs(ray.x) * 255), (uint)(fabs(ray.y) * 255), (uint)(fabs(ray.z) * 255), 255));
+	write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
 }
