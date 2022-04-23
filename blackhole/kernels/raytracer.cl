@@ -59,6 +59,59 @@ inline void colorSky(iamge2d_t outputFrame, int2 coords, float3 ray) {
 }
 
 
+inline float intersectLineHorizontalCircle(float3 origin, float3 ray, float3 circlePos, float3 circleRadius) {
+	// TODO: This should actually be a donut type thing instead of a circle. Return -2 or something if ray hits in the donut hole and then you can avoid blackhole calculations in the calling code because of logic.
+
+	float yDiff = origin.y - circlePos.y;
+	if (ray.y == 0 && yDiff == 0) { return 0; }
+	if (ray.y == 0) { return -1; }
+	float fract = yDiff / ray.y;
+	if (fract < 0) { return -1; }
+	ray *= fract;
+
+	float3 planeCoords = origin + ray;
+	if (length(planeCoords - circlePos) > circleRadius) { return -1 }
+	return fract;
+
+}
+
+inline float intersectLineSphere(float3 origin, float3 ray, float3 spherePos, float3 sphereRadius) {
+
+	float otherTerm = -((origin - spherePos) * ray);
+	float determinant = dot((origin - spherePos) * ray, (origin - spherePos) * ray) - dot(ray, ray) * (dot(origin - spherePos, origin - spherePos) - sphereRadius * sphereRadius);
+
+	if (determinant > 0) {
+		determinant = sqrt(determinant);
+		float d0 = (otherTerm + determinant) / dot(ray, ray);
+		float d1 = (otherTerm - determinant) / dot(ray, ray);
+		if (d0 <= d1) {
+			if (d0 < 0) {
+				if (d1 < 0) {
+					return -1;
+				}
+				return d1;
+			}
+			return d0;
+		} else {
+			if (d1 < 0) {
+				if (d0 < 0) {
+					return -1;
+				}
+				return d0;
+			}
+			return d1;
+		}
+	} else if (determinant == 0) {
+		float distance = otherTerm / dot(ray, ray);
+		if (distance < 0) { return -1; }
+		return distance;
+	} else {
+		return -1;
+	}
+
+}
+
+
 __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int windowHeight, float halfWindowWidth, float halfWindowHeight, 
 							float3 cameraPos, float rayOrigin, Matrix4f cameraRot, 
 							Skybox skybox, 
@@ -73,8 +126,6 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 
 	float3 rayPosition = (float3)(0, 0, rayOrigin);
 
-	float blackholeDistance = intersectLineSphere((float3)(0, 0, rayOrigin), ray, blackholePos, blackholeBlackRadius);
-	if (blackholeDistance == -1) {
 		
 		ray *= 5;			// 5 --> light speed in this case.
 		for (uint i = 0; i < 100; i++) {
@@ -120,16 +171,6 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 			}
 			colorBlackhole(outputFrame, coords); return;
 
-
-	} else {
-		float discDistance = intersectLineHorizontalCircle((float3)(0, 0, rayOrigin), ray, blackholePos, blackholeBlackRadius);
-		if (discDistance == -1) {
-			colorBlackhole(outputFrame, coords); return;
-		}
-		if (discDistance < blackholeDistance) {
-			colorDisc(outputFrame, coords); return;
-		}
-	}
 
 
 	write_imageui(outputFrame, coords, (uint4)(255, 0, 0, 255));				// Just for debugging, probs remove later.
