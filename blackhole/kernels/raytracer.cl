@@ -50,16 +50,16 @@ inline void colorDisc(__write_only image2d_t outputFrame, int2 coords) {
 	write_imageui(outputFrame, coords, (uint4)(255));
 }
 
-inline void colorBlackhole(image2d_t outputFrame, int2 coords) {
+inline void colorBlackhole(__write_only image2d_t outputFrame, int2 coords) {
 	write_imageui(outputFrame, coords, (uint4)(0, 0, 0, 255));
 }
 
-inline void colorSky(iamge2d_t outputFrame, int2 coords, float3 ray) {
+inline void colorSky(__write_only image2d_t outputFrame, int2 coords, Skybox skybox, float3 ray) {
 	write_imageui(outputFrame, coords, (uint4)(skyboxSample(skybox, ray), 255));
 }
 
 
-inline float intersectLineHorizontalCircle(float3 origin, float3 ray, float3 circlePos, float3 circleRadius) {
+inline float intersectLineHorizontalCircle(float3 origin, float3 ray, float3 circlePos, float circleRadius) {
 	// TODO: This should actually be a donut type thing instead of a circle. Return -2 or something if ray hits in the donut hole and then you can avoid blackhole calculations in the calling code because of logic.
 
 	float yDiff = origin.y - circlePos.y;
@@ -70,15 +70,15 @@ inline float intersectLineHorizontalCircle(float3 origin, float3 ray, float3 cir
 	ray *= fract;
 
 	float3 planeCoords = origin + ray;
-	if (length(planeCoords - circlePos) > circleRadius) { return -1 }
+	if (length(planeCoords - circlePos) > circleRadius) { return -1; }
 	return fract;
 
 }
 
-inline float intersectLineSphere(float3 origin, float3 ray, float3 spherePos, float3 sphereRadius) {
+inline float intersectLineSphere(float3 origin, float3 ray, float3 spherePos, float sphereRadius) {
 
-	float otherTerm = -((origin - spherePos) * ray);
-	float determinant = dot((origin - spherePos) * ray, (origin - spherePos) * ray) - dot(ray, ray) * (dot(origin - spherePos, origin - spherePos) - sphereRadius * sphereRadius);
+	float otherTerm = -(dot((origin - spherePos), ray));
+	float determinant = dot(dot((origin - spherePos), ray), dot((origin - spherePos), ray)) - dot(ray, ray) * (dot(origin - spherePos, origin - spherePos) - sphereRadius * sphereRadius);
 
 	if (determinant > 0) {
 		determinant = sqrt(determinant);
@@ -122,9 +122,12 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 
 	// NOTE: Z coords go out of the screen towards the viewer.
 
-	float3 ray = multiplyMatWithFloat3(normalize((float3)(coords.x - halfWindowWidth, halfWindowHeight - coords.y, -rayOrigin)));
+	float3 ray = multiplyMatWithFloat3(cameraRot, normalize((float3)(coords.x - halfWindowWidth, halfWindowHeight - coords.y, -rayOrigin)));
 
 	float3 rayPosition = (float3)(0, 0, rayOrigin);
+
+float blackholeDistance;
+float discDistance;
 
 		
 		ray *= 5;			// 5 --> light speed in this case.
@@ -142,12 +145,12 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 				colorBlackhole(outputFrame, coords); return;
 			}
 			if (discDistance != -1 && discDistance <= length(ray)) {
-				colorDisc(outputFrame, coords, coords); return;
+				colorDisc(outputFrame, coords); return;
 			}
 
 			rayPosition += ray;
 			// G = 1 for now.
-			ray += 1 * blackholeMass / dot((blackholePos - rayPosition), (blackhole - rayPosition));
+			ray += 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
 
 
 
@@ -158,7 +161,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 			if (blackholeDistance == -1) {
 				discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius);
 				if (discDistance == -1) {
-					colorSky(outputFrame, coords, normalize(ray)); return;
+					colorSky(outputFrame, coords, skybox, normalize(ray)); return;
 				}
 				colorDisc(outputFrame, coords); return;
 			}
