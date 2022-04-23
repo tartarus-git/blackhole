@@ -63,6 +63,15 @@ inline float intersectLineHorizontalCircle(float3 origin, float3 ray, float3 cir
 	// TODO: This should actually be a donut type thing instead of a circle. Return -2 or something if ray hits in the donut hole and then you can avoid blackhole calculations in the calling code because of logic.
 
 	float yDiff = origin.y - circlePos.y;
+	yDiff = -yDiff;					// TODO: Without this line, the sim is wrong. Why is it messed up in that specific way that it is though? Seems really strange just because of this one line.
+
+	// TODO: The weirdness is actually also present in the normal version with this line in, but I don't think it has anything to do with this part of the code.
+	// I think the fact that we are using Kleinschrittverfahren for Gravity instead of smooth version with some fancy integral is causing issues.
+	// Close to the blackhole, some rays hit the blackhole instead of the disc because the gravity curve isn't smooth but blocky so to speak.
+	// Decreasing light speed, increasing step count, increasing mass of blackhole, so that the simulation stays relatively same while the "resolution" of the gravity goes up, doing that mitigates the issues, which supports my theory.
+	// That causes other optical effects though. Before solving this issue, we should take care of the crazy distortion that the player experiences when objects go into corners. That shouldn't happen I think.
+
+
 	if (ray.y == 0 && yDiff == 0) { return 0; }
 	if (ray.y == 0) { return -1; }
 	float fract = yDiff / ray.y;
@@ -124,17 +133,17 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 
 	float3 ray = multiplyMatWithFloat3(cameraRot, normalize((float3)(coords.x - halfWindowWidth, halfWindowHeight - coords.y, -rayOrigin)));
 
-	float3 rayPosition = (float3)(0, 0, rayOrigin);
+	float3 rayPosition = cameraPos;
 
 float blackholeDistance;
 float discDistance;
 
 		
-		ray *= 5;			// 5 --> light speed in this case.
+		ray *= 5;			// multiplier is light speed in this case.
 		for (uint i = 0; i < 100; i++) {
 
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
-			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius);
+			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
 			if (blackholeDistance != -1 && blackholeDistance <= length(ray)) {
 				if (discDistance != -1 && discDistance <= length(ray)) {
 					if (discDistance <= blackholeDistance) {
@@ -150,7 +159,11 @@ float discDistance;
 
 			rayPosition += ray;
 			// G = 1 for now.
-			ray += 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
+			float accel = 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
+
+			float3 toVec = blackholePos - rayPosition;
+			toVec = normalize(toVec);
+			ray += toVec * accel;
 
 
 
@@ -159,13 +172,13 @@ float discDistance;
 
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
 			if (blackholeDistance == -1) {
-				discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius);
+				discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
 				if (discDistance == -1) {
 					colorSky(outputFrame, coords, skybox, normalize(ray)); return;
 				}
 				colorDisc(outputFrame, coords); return;
 			}
-			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius);
+			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
 			if (discDistance == -1) {
 				colorBlackhole(outputFrame, coords); return;
 			}

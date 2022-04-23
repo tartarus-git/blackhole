@@ -31,8 +31,9 @@ public:
 	bool loadSkybox(const Skybox* skybox) const;
 
 	bool loadBlackholePos(const Vector3f* blackholePos) const;
-
-	bool loadBlackholeDotProducts(const Vector3f& cameraPos, const Blackhole& blackhole) const;
+	bool loadBlackholeMass(const float blackholeMass) const;
+	bool loadBlackholeBlackRadius(const float blackholeBlackRadius) const;
+	bool loadBlackholeInfluenceRadius(const float blackholeInfluenceRadius) const;
 
 	bool render(char* outputFrame) const;
 };

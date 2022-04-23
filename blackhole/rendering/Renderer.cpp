@@ -34,6 +34,17 @@ bool updateDeviceWindowSizeVars(int windowWidth, int windowHeight) {
 		debuglogger::out << debuglogger::error << "failed to set windowHeight kernel arg" << debuglogger::endl;
 		return false;
 	}
+
+	float half = windowWidth / 2.0f;
+	if (clSetKernelArg(compute::kernel, 3, sizeof(float), &half) != CL_SUCCESS) {
+		debuglogger::out << debuglogger::error << "failed to set halfWindowWidth kernel arg" << debuglogger::endl;
+		return false;
+	}
+	half = windowHeight / 2.0f;
+	if (clSetKernelArg(compute::kernel, 4, sizeof(float), &half) != CL_SUCCESS) {
+		debuglogger::out << debuglogger::error << "failed to set halfWindowHeight kernel arg" << debuglogger::endl;
+	}
+
 	return true;
 }
 
@@ -100,7 +111,7 @@ bool Renderer::recallibrateAfterWindowResize(int newWindowWidth, int newWindowHe
 	return true;
 }
 
-#define KERNEL_SCENE_ARGS_START 3
+#define KERNEL_SCENE_ARGS_START 5
 
 // We're only filling 3/4 of the actual kernel arg since the actual kernel arg is a float4, but the kernel is built such that that last bit of data is allowed to be undefined.
 bool Renderer::loadCameraPos(const Vector3f* cameraPos) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START, sizeof(Vector3f), cameraPos) == CL_SUCCESS; }
@@ -123,14 +134,20 @@ bool Renderer::loadSkybox(const Skybox* skybox) const { return clSetKernelArg(co
 
 bool Renderer::loadBlackholePos(const Vector3f* blackholePos) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 4, sizeof(Vector3f), blackholePos) == CL_SUCCESS; }
 
-bool Renderer::loadBlackholeDotProducts(const Vector3f& cameraPos, const Blackhole& blackhole) const {
+bool Renderer::loadBlackholeMass(const float blackholeMass) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 5, sizeof(float), &blackholeMass) == CL_SUCCESS; }
+
+bool Renderer::loadBlackholeBlackRadius(const float blackholeBlackRadius) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &blackholeBlackRadius) == CL_SUCCESS; }
+
+bool Renderer::loadBlackholeInfluenceRadius(const float blackholeInfluenceRadius) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 7, sizeof(float), &blackholeInfluenceRadius) == CL_SUCCESS; }
+
+/*bool Renderer::loadBlackholeDotProducts(const Vector3f& cameraPos, const Blackhole& blackhole) const {
 	Vector3f fromBlackhole = cameraPos - blackhole.pos;
 	float fromBlackholeLenSquared = fromBlackhole % fromBlackhole;
 	float squaredDotProduct = fromBlackholeLenSquared - blackhole.blackRadius * blackhole.blackRadius;			// TODO: remove unnecessary computation. Squaring doesn't have to happen every time.
 	if (clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 5, sizeof(float), &squaredDotProduct) != CL_SUCCESS) { return false; }
 	squaredDotProduct = fromBlackholeLenSquared - blackhole.influenceRadius * blackhole.influenceRadius;
 	return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &squaredDotProduct) == CL_SUCCESS;
-}
+}*/
 
 // TODO: Obviously move all this around to reflect the order in the header file.
 

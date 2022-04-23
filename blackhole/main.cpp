@@ -167,12 +167,22 @@ void graphicsLoop() {
 
 	Blackhole blackhole = Blackhole(Vector3f(0, 0, -20), 15, 30);
 	if (!renderer.loadBlackholePos(&blackhole.pos)) {
-		debuglogger::out << debuglogger::error << "failed to load black hole position into compute device" << debuglogger::endl;
+		debuglogger::out << debuglogger::error << "failed to load blackhole position into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
 
-	if (!renderer.loadBlackholeDotProducts(camera.pos, blackhole)) {
-		debuglogger::out << debuglogger::error << "failed to load blackhole dot products into compute device" << debuglogger::endl;
+	if (!renderer.loadBlackholeMass(100)) {
+		debuglogger::out << debuglogger::error << "failed to load blackhole mass into compute device" << debuglogger::endl;
+		POST_THREAD_EXIT; renderer.release(); return;
+	}
+
+	if (!renderer.loadBlackholeBlackRadius(blackhole.blackRadius)) {
+		debuglogger::out << debuglogger::error << "failed to load blackhole black radius into compute device" << debuglogger::endl;
+		POST_THREAD_EXIT; renderer.release(); return;
+	}
+
+	if (!renderer.loadBlackholeInfluenceRadius(blackhole.influenceRadius)) {
+		debuglogger::out << debuglogger::error << "failed to load blackhole influence radius into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
 
@@ -245,8 +255,6 @@ void graphicsLoop() {
 		if (!renderer.loadCameraPos(&camera.pos)) { debuglogger::out << debuglogger::error << "failed to load new camera position" << debuglogger::endl; EXIT_FROM_THREAD; }
 		cameraRotMat = Matrix4f::createRotationMat(camera.rot);
 		if (!renderer.loadCameraRotMat(&cameraRotMat)) { debuglogger::out << debuglogger::error << "failed to load new camera rotation" << debuglogger::endl; EXIT_FROM_THREAD; }
-
-		if (!renderer.loadBlackholeDotProducts(camera.pos, blackhole)) { debuglogger::out << debuglogger::error << "failed to load new blackhole dot products" << debuglogger::endl; EXIT_FROM_THREAD; }
 	}
 
 	releaseAndReturn:
