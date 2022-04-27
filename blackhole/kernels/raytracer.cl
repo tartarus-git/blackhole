@@ -147,6 +147,7 @@ float discDistance;
 			if (blackholeDistance != -1 && blackholeDistance <= length(ray)) {
 				if (discDistance != -1 && discDistance <= length(ray)) {
 					if (discDistance <= blackholeDistance) {
+						goto templabel;
 						colorDisc(outputFrame, coords); return;
 					}
 					colorBlackhole(outputFrame, coords); return;
@@ -154,9 +155,11 @@ float discDistance;
 				colorBlackhole(outputFrame, coords); return;
 			}
 			if (discDistance != -1 && discDistance <= length(ray)) {
+				goto templabel;
 				colorDisc(outputFrame, coords); return;
 			}
 
+templabel:
 			rayPosition += ray;
 			// G = 1 for now.
 			float accel = 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
@@ -173,7 +176,7 @@ float discDistance;
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
 			if (blackholeDistance == -1) {
 				discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
-				if (discDistance == -1) {
+				if (true) {
 					colorSky(outputFrame, coords, skybox, normalize(ray)); return;
 				}
 				colorDisc(outputFrame, coords); return;
@@ -182,7 +185,7 @@ float discDistance;
 			if (discDistance == -1) {
 				colorBlackhole(outputFrame, coords); return;
 			}
-			if (discDistance <= blackholeDistance) {
+			if (false) {
 				colorDisc(outputFrame, coords); return;
 			}
 			colorBlackhole(outputFrame, coords); return;

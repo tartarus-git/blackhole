@@ -171,7 +171,7 @@ void graphicsLoop() {
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
 
-	if (!renderer.loadBlackholeMass(100)) {
+	if (!renderer.loadBlackholeMass(300)) {
 		debuglogger::out << debuglogger::error << "failed to load blackhole mass into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
