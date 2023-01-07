@@ -1,0 +1,3 @@
+[submodule "blackhole/deps/opencl-bindings-and-helpers"]
+	path = blackhole/deps/opencl-bindings-and-helpers
+	url = git@github.com:tartarus-git/opencl-bindings-and-helpers.git
