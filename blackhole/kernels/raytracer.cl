@@ -139,8 +139,8 @@ float blackholeDistance;
 float discDistance;
 
 		
-		ray *= 5;			// multiplier is light speed in this case.
-		for (uint i = 0; i < 100; i++) {
+		ray *= 1;			// multiplier is light speed in this case.
+		for (uint i = 0; i < 30; i++) {
 
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
 			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);

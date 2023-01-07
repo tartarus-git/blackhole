@@ -14,7 +14,7 @@
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
 
-#define MOVE_SENSITIVITY 0.1f
+#define MOVE_SENSITIVITY 1.0f
 
 namespace keys {
 	bool w = false;
