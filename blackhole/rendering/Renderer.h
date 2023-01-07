@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OpenCL/OpenCLBindingsAndHelpers.h"
+#include "cl_bindings_and_helpers.h"
 
 #include "math/Vector3f.h"
 #include "math/Matrix4f.h"

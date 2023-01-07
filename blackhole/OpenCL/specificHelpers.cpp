@@ -1,6 +1,6 @@
 #include "specificHelpers.h"
 
-#include "OpenCLBindingsAndHelpers.h"
+#include "cl_bindings_and_helpers.h"
 
 namespace compute {
 	cl_int releaseContextVars() {
@@ -23,11 +23,10 @@ namespace compute {
 		cl_int err = initOpenCLBindings();
 		if (err != CL_SUCCESS) { return err; }
 
-		// TODO: Consider making a system where a platform is selected if it's version is at least the version given here through parameters. Would that work?
-		err = initOpenCLVarsForBestDevice("OpenCL 3.0 ", platform, device, context, commandQueue);
+		err = initOpenCLVarsForBestDevice({ 3, 0 }, platform, device, context, commandQueue);
 		if (err != CL_SUCCESS) { freeOpenCLLib(); return err; }
 
-		err = setupComputeKernel(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);
+		err = setupComputeKernelFromFile(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);
 		if (err != CL_SUCCESS) { releaseContextVars(); freeOpenCLLib(); return err; }
 	}
 

@@ -1,6 +1,6 @@
 #include "Renderer.h"
 
-#include "OpenCL/OpenCLBindingsAndHelpers.h"
+#include "cl_bindings_and_helpers.h"
 #include "OpenCL/specificHelpers.h"
 
 #include "math/constants.h"

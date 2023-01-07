@@ -93,7 +93,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)deps\opencl-bindings-and-helpers\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -109,7 +109,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)deps\opencl-bindings-and-helpers\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,7 +125,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)deps\opencl-bindings-and-helpers\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -141,7 +141,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)deps\opencl-bindings-and-helpers\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,23 +151,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deps\opencl-bindings-and-helpers\src\cl_bindings_and_helpers.cpp" />
     <ClCompile Include="math\Matrix4f.cpp" />
     <ClCompile Include="rendering\Camera.cpp" />
     <ClCompile Include="logging\debugOutput.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="OpenCL\OpenCLBindingsAndHelpers.cpp" />
     <ClCompile Include="OpenCL\specificHelpers.cpp" />
     <ClCompile Include="rendering\Renderer.cpp" />
     <ClCompile Include="math\Vector3f.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="deps\opencl-bindings-and-helpers\include\cl_bindings_and_helpers.h" />
     <ClInclude Include="math\constants.h" />
     <ClInclude Include="math\Matrix4f.h" />
     <ClInclude Include="math\Vector4f.h" />
     <ClInclude Include="objects\Blackhole.h" />
     <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="logging\debugOutput.h" />
-    <ClInclude Include="OpenCL\OpenCLBindingsAndHelpers.h" />
     <ClInclude Include="OpenCL\specificHelpers.h" />
     <ClInclude Include="rendering\Renderer.h" />
     <ClInclude Include="math\Vector3f.h" />

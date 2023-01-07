@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OpenCLBindingsAndHelpers.h"
+#include "cl_bindings_and_helpers.h"
 #include <string>
 
 // This is a collection of data and functions. The functions are here because of generalization.

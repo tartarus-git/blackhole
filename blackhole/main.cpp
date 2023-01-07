@@ -2,7 +2,7 @@
 #define WINDOW_CLASS_NAME "BLACKHOLE_SIM_WINDOW"
 #include "window/windowSetup.h"
 
-#include "OpenCL/OpenCLBindingsAndHelpers.h"
+#include "cl_bindings_and_helpers.h"
 #include "OpenCL/specificHelpers.h"
 
 #include "rendering/Renderer.h"
