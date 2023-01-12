@@ -153,6 +153,8 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 					if (discDistance <= blackholeDistance) {
 						goto templabel;
 						colorDisc(outputFrame, coords); return;
+						// TODO: This is probs the reason for the see-through line in the middle of the blackhole when starting up.
+						// Easy to fix, you just need to decide what to do with the secretion disc.
 					}
 					colorBlackhole(outputFrame, coords); return;
 				}
