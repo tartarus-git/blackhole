@@ -169,6 +169,7 @@
     <ClInclude Include="rendering\Camera.h" />
     <ClInclude Include="logging\debugOutput.h" />
     <ClInclude Include="OpenCL\specificHelpers.h" />
+    <ClInclude Include="rendering\FrameTimer.h" />
     <ClInclude Include="rendering\Renderer.h" />
     <ClInclude Include="math\Vector3f.h" />
     <ClInclude Include="rendering\Skybox.h" />

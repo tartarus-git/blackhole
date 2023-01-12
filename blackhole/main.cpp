@@ -9,6 +9,10 @@
 
 #include "logging/debugOutput.h"
 
+#include "rendering/FrameTimer.h"
+
+#define MAX_FPS 60
+
 #define FOV_VALUE 120
 
 #define LOOK_SENSITIVITY_X 0.01f
@@ -196,7 +200,11 @@ void graphicsLoop() {
 	captureMouse = true;
 	captureKeyboard = true;
 
+	FrameTimer main_frame_timer(MAX_FPS);
+
 	while (isAlive) {
+		main_frame_timer.mark_frame_start();
+
 		if (!renderer.render(outputFrame)) {
 			debuglogger::out << debuglogger::error << "failed to render scene" << debuglogger::endl;
 			EXIT_FROM_THREAD;
@@ -255,6 +263,8 @@ void graphicsLoop() {
 		if (!renderer.loadCameraPos(&camera.pos)) { debuglogger::out << debuglogger::error << "failed to load new camera position" << debuglogger::endl; EXIT_FROM_THREAD; }
 		cameraRotMat = Matrix4f::createRotationMat(camera.rot);
 		if (!renderer.loadCameraRotMat(&cameraRotMat)) { debuglogger::out << debuglogger::error << "failed to load new camera rotation" << debuglogger::endl; EXIT_FROM_THREAD; }
+
+		main_frame_timer.wait_if_needed();
 	}
 
 	releaseAndReturn:

@@ -77,6 +77,9 @@
     <ClInclude Include="deps\opencl-bindings-and-helpers\include\cl_bindings_and_helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rendering\FrameTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="kernels\raytracer.cl" />
