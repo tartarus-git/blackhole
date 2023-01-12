@@ -124,10 +124,14 @@ inline float intersectLineSphere(float3 origin, float3 ray, float3 spherePos, fl
 __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int windowHeight, float halfWindowWidth, float halfWindowHeight, 
 							float3 cameraPos, float rayOrigin, Matrix4f cameraRot, 
 							Skybox skybox, 
-							float3 blackholePos, float blackholeMass, float blackholeBlackRadius, float blackholeInfluenceRadius) {
-	int x = get_global_id(0);
-	if (x >= windowWidth) { return; }
-	int2 coords = (int2)(x, get_global_id(1));
+							float3 blackholePos, float blackholeMass, float blackholeBlackRadius, float blackholeInfluenceRadius, 
+							float light_speed, unsigned short light_steps) {
+	int2 coords;
+	coords.x = get_global_id(0);
+	if (coords.x >= windowWidth) { return; }
+	coords.y = get_global_id(1);
+	if (coords.y >= windowHeight) { return; }
+	// TODO: Make sure the host does the square fitting algorithm for the work group sizes.
 
 	// NOTE: Z coords go out of the screen towards the viewer.
 
@@ -135,12 +139,12 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 
 	float3 rayPosition = cameraPos;
 
-float blackholeDistance;
-float discDistance;
+	float blackholeDistance;
+	float discDistance;
 
 		
-		ray *= 1;			// multiplier is light speed in this case.
-		for (uint i = 0; i < 30; i++) {
+		ray *= light_speed;
+		for (uint i = 0; i < light_steps; i++) {
 
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
 			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);

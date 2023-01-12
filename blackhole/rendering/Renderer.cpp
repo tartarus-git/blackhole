@@ -12,6 +12,8 @@
 
 #include "logging/debugOutput.h"
 
+#include <cstdint>
+
 bool allocateOutputFrame(int windowWidth, int windowHeight) {
 	cl_int err; compute::outputFrame = clCreateImage2D(compute::context, CL_MEM_WRITE_ONLY, &compute::outputFrameFormat, windowWidth, windowHeight, 0, nullptr, &err);
 	if (!compute::outputFrame) { debuglogger::out << debuglogger::error << "failed to allocate compute::outputFrame" << debuglogger::endl; return false; }
@@ -148,6 +150,10 @@ bool Renderer::loadBlackholeInfluenceRadius(const float blackholeInfluenceRadius
 	squaredDotProduct = fromBlackholeLenSquared - blackhole.influenceRadius * blackhole.influenceRadius;
 	return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &squaredDotProduct) == CL_SUCCESS;
 }*/
+
+bool Renderer::loadLightSpeed(float light_speed) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 8, sizeof(float), &light_speed) == CL_SUCCESS; }
+
+bool Renderer::loadLightStepAmount(uint16_t light_steps) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 9, sizeof(uint16_t), &light_steps) == CL_SUCCESS; }
 
 // TODO: Obviously move all this around to reflect the order in the header file.
 

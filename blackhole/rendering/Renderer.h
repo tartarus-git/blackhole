@@ -35,6 +35,9 @@ public:
 	bool loadBlackholeBlackRadius(const float blackholeBlackRadius) const;
 	bool loadBlackholeInfluenceRadius(const float blackholeInfluenceRadius) const;
 
+	bool loadLightSpeed(float light_speed) const;
+	bool loadLightStepAmount(uint16_t light_steps) const;
+
 	bool render(char* outputFrame) const;
 };
 

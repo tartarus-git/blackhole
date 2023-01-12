@@ -20,6 +20,10 @@
 
 #define MOVE_SENSITIVITY 1.0f
 
+#define STARTING_LIGHT_SPEED 10
+#define STARTING_LIGHT_STEP_AMOUNT 30
+#define LIGHT_SPEED_DIFF 0.1f
+
 namespace keys {
 	bool w = false;
 	bool a = false;
@@ -27,6 +31,13 @@ namespace keys {
 	bool d = false;
 	bool space = false;
 	bool ctrl = false;
+
+	bool p = false;
+	bool o = false;
+	bool light_speed_pauser = false;
+	bool k = false;
+	bool l = false;
+	bool light_steps_pauser = false;
 }
 
 Camera camera;
@@ -73,6 +84,11 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case (WPARAM)KeyboardKeys::space: keys::space = true; return 0;
 			case (WPARAM)KeyboardKeys::ctrl: keys::ctrl = true; return 0;
 			case (WPARAM)KeyboardKeys::escape: captureMouse = !captureMouse; return 0;
+
+			case (WPARAM)KeyboardKeys::p: if (!keys::light_speed_pauser) { keys::p = true; } return 0;
+			case (WPARAM)KeyboardKeys::o: if (!keys::light_speed_pauser) { keys::o = true; } return 0;
+			case (WPARAM)KeyboardKeys::k: if (!keys::light_steps_pauser) { keys::k = true; } return 0;
+			case (WPARAM)KeyboardKeys::l: if (!keys::light_steps_pauser) { keys::l = true; } return 0;
 			}
 		}
 		return 0;
@@ -85,6 +101,11 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case (WPARAM)KeyboardKeys::d: keys::d = false; return 0;
 			case (WPARAM)KeyboardKeys::space: keys::space = false; return 0;
 			case (WPARAM)KeyboardKeys::ctrl: keys::ctrl = false; return 0;
+
+			case (WPARAM)KeyboardKeys::p: keys::p = false; keys::light_speed_pauser = false; return 0;
+			case (WPARAM)KeyboardKeys::o: keys::o = false; keys::light_speed_pauser = false; return 0;
+			case (WPARAM)KeyboardKeys::k: keys::k = false; keys::light_steps_pauser = false; return 0;
+			case (WPARAM)KeyboardKeys::l: keys::l = false; keys::light_steps_pauser = false; return 0;
 			}
 		}
 		return 0;
@@ -202,6 +223,14 @@ void graphicsLoop() {
 
 	FrameTimer main_frame_timer(MAX_FPS);
 
+	float light_speed = STARTING_LIGHT_SPEED;
+	float light_steps = STARTING_LIGHT_STEP_AMOUNT;
+	float prev_light_speed = light_speed;
+	float prev_light_steps = light_steps;
+
+	if (!renderer.loadLightSpeed(light_speed)) { debuglogger::out << debuglogger::error << "failed to load light speed" << debuglogger::endl; EXIT_FROM_THREAD; }
+	if (!renderer.loadLightStepAmount(light_steps)) { debuglogger::out << debuglogger::error << "failed to load light step amount" << debuglogger::endl; EXIT_FROM_THREAD; }
+
 	while (isAlive) {
 		main_frame_timer.mark_frame_start();
 
@@ -259,6 +288,20 @@ void graphicsLoop() {
 		if (keys::space) { moveVector.y += MOVE_SENSITIVITY; }
 		if (keys::ctrl) { moveVector.y -= MOVE_SENSITIVITY; }
 		camera.move(moveVector);			// TODO: Is there really a reason to use custom vector rotation code when you can just pipe the vec through cameraRotMat? Do that.
+
+		if (!keys::light_speed_pauser && keys::p) { light_speed += LIGHT_SPEED_DIFF; keys::light_speed_pauser = true; }
+		if (!keys::light_speed_pauser && keys::o) { light_speed -= LIGHT_SPEED_DIFF; keys::light_speed_pauser = true; }
+		if (!keys::light_steps_pauser && keys::k) { light_steps--; keys::light_steps_pauser = true; }
+		if (!keys::light_steps_pauser && keys::l) { light_steps++; keys::light_steps_pauser = true; }
+
+		if (prev_light_speed != light_speed) {
+			if (!renderer.loadLightSpeed(light_speed)) { debuglogger::out << debuglogger::error << "failed to load light speed" << debuglogger::endl; EXIT_FROM_THREAD; }
+			prev_light_speed = light_speed;
+		}
+		if (prev_light_steps != light_steps) {
+			if (!renderer.loadLightStepAmount(light_steps)) { debuglogger::out << debuglogger::error << "failed to load light step amount" << debuglogger::endl; EXIT_FROM_THREAD; }
+			prev_light_steps = light_steps;
+		}
 
 		if (!renderer.loadCameraPos(&camera.pos)) { debuglogger::out << debuglogger::error << "failed to load new camera position" << debuglogger::endl; EXIT_FROM_THREAD; }
 		cameraRotMat = Matrix4f::createRotationMat(camera.rot);
