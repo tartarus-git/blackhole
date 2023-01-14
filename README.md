@@ -20,7 +20,11 @@ ctrl --> down
 p --> increase the value for the speed of light that the GPU code uses for the simulation
 o --> decrease that value
 k --> decrease the value for the amount of steps that the GPU code does with the light ray when simulating
-l --> increase the that value
+l --> increase that value
+n --> decrase FOV
+m --> increase FOV
 ```
 
-# TODO: Add pictures
+# Demo Pictures
+
+![demo 1](demo_images/demo_1.jpg)
