@@ -139,63 +139,28 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 	float3 rayPosition = cameraPos;
 
 	float blackholeDistance;
-	float discDistance;
-
 		
-		ray *= light_speed;
-		for (unsigned int i = 0; i < light_steps; i++) {
+	ray *= light_speed;
+	for (unsigned int i = 0; i < light_steps; i++) {
 
-			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
-			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
-			if (blackholeDistance != -1 && blackholeDistance <= length(ray)) {
-				if (discDistance != -1 && discDistance <= length(ray)) {
-					if (discDistance <= blackholeDistance) {
-						goto templabel;
-						colorDisc(outputFrame, coords); return;
-						// TODO: This is probs the reason for the see-through line in the middle of the blackhole when starting up.
-						// Easy to fix, you just need to decide what to do with the secretion disc.
-					}
-					colorBlackhole(outputFrame, coords); return;
-				}
-				colorBlackhole(outputFrame, coords); return;
-			}
-			if (discDistance != -1 && discDistance <= length(ray)) {
-				goto templabel;
-				colorDisc(outputFrame, coords); return;
-			}
-
-templabel:
-			rayPosition += ray;
-			// G = 1 for now.
-			float accel = 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
-
-			float3 toVec = blackholePos - rayPosition;
-			toVec = normalize(toVec);
-			ray += toVec * accel;
-
-
-
-
+		blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
+		if (blackholeDistance != -1 && blackholeDistance <= length(ray)) {
+			colorBlackhole(outputFrame, coords);
+			return;
 		}
 
-			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
-			if (blackholeDistance == -1) {
-				discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
-				if (true) {
-					colorSky(outputFrame, coords, skybox, normalize(ray)); return;
-				}
-				colorDisc(outputFrame, coords); return;
-			}
-			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);
-			if (discDistance == -1) {
-				colorBlackhole(outputFrame, coords); return;
-			}
-			if (false) {
-				colorDisc(outputFrame, coords); return;
-			}
-			colorBlackhole(outputFrame, coords); return;
+		rayPosition += ray;
+		// G = 1 for now.
+		float accel = 1 * blackholeMass / dot((blackholePos - rayPosition), (blackholePos - rayPosition));
 
+		float3 toVec = blackholePos - rayPosition;
+		toVec = normalize(toVec);
+		ray += toVec * accel;
+	}
 
-
-	write_imageui(outputFrame, coords, (uint4)(255, 0, 0, 255));				// Just for debugging, probs remove later.
+	blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
+	if (blackholeDistance == -1) {
+		colorSky(outputFrame, coords, skybox, normalize(ray)); return;
+	}
+	colorBlackhole(outputFrame, coords); return;
 }

@@ -203,6 +203,9 @@ void graphicsLoop() {
 		POST_THREAD_EXIT; renderer.release(); return;
 	}
 
+	// TODO: The current problem is that when you get close to the blackhole, you see another black hole behind you, which shouldn't happen. You've got to fix your simulation so that it doesn't happen.
+	// TODO: Also, the blackhole behind you sometimes has a circular line on it where you can see through it, why is that? Figure that out.
+
 	if (!renderer.loadBlackholeMass(300)) {
 		debuglogger::out << debuglogger::error << "failed to load blackhole mass into compute device" << debuglogger::endl;
 		POST_THREAD_EXIT; renderer.release(); return;
