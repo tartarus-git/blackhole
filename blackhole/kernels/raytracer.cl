@@ -125,7 +125,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 							float3 cameraPos, float rayOrigin, Matrix4f cameraRot, 
 							Skybox skybox, 
 							float3 blackholePos, float blackholeMass, float blackholeBlackRadius, float blackholeInfluenceRadius, 
-							float light_speed, unsigned short light_steps) {
+							float light_speed, unsigned int light_steps) {
 	int2 coords;
 	coords.x = get_global_id(0);
 	if (coords.x >= windowWidth) { return; }
@@ -144,7 +144,7 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 
 		
 		ray *= light_speed;
-		for (uint i = 0; i < light_steps; i++) {
+		for (unsigned int i = 0; i < light_steps; i++) {
 
 			blackholeDistance = intersectLineSphere(rayPosition, ray, blackholePos, blackholeBlackRadius);
 			discDistance = intersectLineHorizontalCircle(rayPosition, ray, blackholePos, blackholeBlackRadius + 20);

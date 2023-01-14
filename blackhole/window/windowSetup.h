@@ -17,6 +17,8 @@ enum class KeyboardKeys {
 	o = 0x4F,
 	k = 0x4B,
 	l = 0x4C,
+	n = 0x4E,
+	m = 0x4D,
 	space = VK_SPACE,
 	ctrl = VK_CONTROL,
 	escape = VK_ESCAPE

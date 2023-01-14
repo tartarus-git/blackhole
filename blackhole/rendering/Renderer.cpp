@@ -151,9 +151,9 @@ bool Renderer::loadBlackholeInfluenceRadius(const float blackholeInfluenceRadius
 	return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 6, sizeof(float), &squaredDotProduct) == CL_SUCCESS;
 }*/
 
-bool Renderer::loadLightSpeed(float light_speed) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 8, sizeof(float), &light_speed) == CL_SUCCESS; }
+bool Renderer::loadLightSpeed(float light_speed) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 8, sizeof(light_speed), &light_speed) == CL_SUCCESS; }
 
-bool Renderer::loadLightStepAmount(uint16_t light_steps) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 9, sizeof(uint16_t), &light_steps) == CL_SUCCESS; }
+bool Renderer::loadLightStepAmount(uint32_t light_steps) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START + 9, sizeof(light_steps), &light_steps) == CL_SUCCESS; }
 
 // TODO: Obviously move all this around to reflect the order in the header file.
 

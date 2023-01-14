@@ -13,7 +13,7 @@
 
 #define MAX_FPS 60
 
-#define FOV_VALUE 120
+#define STARTING_FOV_VALUE 170
 
 #define LOOK_SENSITIVITY_X 0.01f
 #define LOOK_SENSITIVITY_Y 0.01f
@@ -34,10 +34,11 @@ namespace keys {
 
 	bool p = false;
 	bool o = false;
-	bool light_speed_pauser = false;
 	bool k = false;
 	bool l = false;
-	bool light_steps_pauser = false;
+
+	bool n = false;
+	bool m = false;
 }
 
 Camera camera;
@@ -85,10 +86,13 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case (WPARAM)KeyboardKeys::ctrl: keys::ctrl = true; return 0;
 			case (WPARAM)KeyboardKeys::escape: captureMouse = !captureMouse; return 0;
 
-			case (WPARAM)KeyboardKeys::p: if (!keys::light_speed_pauser) { keys::p = true; } return 0;
-			case (WPARAM)KeyboardKeys::o: if (!keys::light_speed_pauser) { keys::o = true; } return 0;
-			case (WPARAM)KeyboardKeys::k: if (!keys::light_steps_pauser) { keys::k = true; } return 0;
-			case (WPARAM)KeyboardKeys::l: if (!keys::light_steps_pauser) { keys::l = true; } return 0;
+			case (WPARAM)KeyboardKeys::p: keys::p = true; return 0;
+			case (WPARAM)KeyboardKeys::o: keys::o = true; return 0;
+			case (WPARAM)KeyboardKeys::k: keys::k = true; return 0;
+			case (WPARAM)KeyboardKeys::l: keys::l = true; return 0;
+
+			case (WPARAM)KeyboardKeys::n: keys::n = true; return 0;
+			case (WPARAM)KeyboardKeys::m: keys::m = true; return 0;
 			}
 		}
 		return 0;
@@ -102,10 +106,13 @@ LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			case (WPARAM)KeyboardKeys::space: keys::space = false; return 0;
 			case (WPARAM)KeyboardKeys::ctrl: keys::ctrl = false; return 0;
 
-			case (WPARAM)KeyboardKeys::p: keys::p = false; keys::light_speed_pauser = false; return 0;
-			case (WPARAM)KeyboardKeys::o: keys::o = false; keys::light_speed_pauser = false; return 0;
-			case (WPARAM)KeyboardKeys::k: keys::k = false; keys::light_steps_pauser = false; return 0;
-			case (WPARAM)KeyboardKeys::l: keys::l = false; keys::light_steps_pauser = false; return 0;
+			case (WPARAM)KeyboardKeys::p: keys::p = false; return 0;
+			case (WPARAM)KeyboardKeys::o: keys::o = false; return 0;
+			case (WPARAM)KeyboardKeys::k: keys::k = false; return 0;
+			case (WPARAM)KeyboardKeys::l: keys::l = false; return 0;
+
+			case (WPARAM)KeyboardKeys::n: keys::n = false; return 0;
+			case (WPARAM)KeyboardKeys::m: keys::m = false; return 0;
 			}
 		}
 		return 0;
@@ -164,7 +171,7 @@ void graphicsLoop() {
 
 	if (!renderer.init(windowWidth, windowHeight)) { POST_THREAD_EXIT; return; }
 
-	camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), FOV_VALUE);
+	camera = Camera(Vector3f(0, 0, 0), Vector3f(0, 0, 0), STARTING_FOV_VALUE);
 	Matrix4f cameraRotMat = Matrix4f::createRotationMat(camera.rot);
 
 	renderer.calculateRayOriginBasis(camera.FOV);
@@ -224,9 +231,12 @@ void graphicsLoop() {
 	FrameTimer main_frame_timer(MAX_FPS);
 
 	float light_speed = STARTING_LIGHT_SPEED;
-	float light_steps = STARTING_LIGHT_STEP_AMOUNT;
+	uint32_t light_steps = STARTING_LIGHT_STEP_AMOUNT;
 	float prev_light_speed = light_speed;
-	float prev_light_steps = light_steps;
+	uint32_t prev_light_steps = light_steps;
+
+	float fov = STARTING_FOV_VALUE;
+	float prev_fov = fov;
 
 	if (!renderer.loadLightSpeed(light_speed)) { debuglogger::out << debuglogger::error << "failed to load light speed" << debuglogger::endl; EXIT_FROM_THREAD; }
 	if (!renderer.loadLightStepAmount(light_steps)) { debuglogger::out << debuglogger::error << "failed to load light step amount" << debuglogger::endl; EXIT_FROM_THREAD; }
@@ -275,24 +285,30 @@ void graphicsLoop() {
 		}
 
 		if (pendingMouseMove) {
-			camera.rot.x += mouseMoveX * LOOK_SENSITIVITY_X;			// TODO: Probably prevent this from overflowing by checking if the rot changes break 2pi boundaries and then subtracting by camera.rot.x / 2pi.
-			camera.rot.y -= mouseMoveY * LOOK_SENSITIVITY_Y;
+			camera.rot.x += mouseMoveX * LOOK_SENSITIVITY_X * main_frame_timer.travel_distance_multiplier;			// TODO: Probably prevent this from overflowing by checking if the rot changes break 2pi boundaries and then subtracting by camera.rot.x / 2pi.
+			camera.rot.y -= mouseMoveY * LOOK_SENSITIVITY_Y * main_frame_timer.travel_distance_multiplier;
 			pendingMouseMove = false;
 		}
 
 		Vector3f moveVector = { };
-		if (keys::w) { moveVector.z -= MOVE_SENSITIVITY; }
-		if (keys::a) { moveVector.x -= MOVE_SENSITIVITY; }
-		if (keys::s) { moveVector.z += MOVE_SENSITIVITY; }
-		if (keys::d) { moveVector.x += MOVE_SENSITIVITY; }
-		if (keys::space) { moveVector.y += MOVE_SENSITIVITY; }
-		if (keys::ctrl) { moveVector.y -= MOVE_SENSITIVITY; }
+		if (keys::w) { moveVector.z -= MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
+		if (keys::a) { moveVector.x -= MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
+		if (keys::s) { moveVector.z += MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
+		if (keys::d) { moveVector.x += MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
+		if (keys::space) { moveVector.y += MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
+		if (keys::ctrl) { moveVector.y -= MOVE_SENSITIVITY * main_frame_timer.travel_distance_multiplier; }
 		camera.move(moveVector);			// TODO: Is there really a reason to use custom vector rotation code when you can just pipe the vec through cameraRotMat? Do that.
 
-		if (!keys::light_speed_pauser && keys::p) { light_speed += LIGHT_SPEED_DIFF; keys::light_speed_pauser = true; }
-		if (!keys::light_speed_pauser && keys::o) { light_speed -= LIGHT_SPEED_DIFF; keys::light_speed_pauser = true; }
-		if (!keys::light_steps_pauser && keys::k) { light_steps--; keys::light_steps_pauser = true; }
-		if (!keys::light_steps_pauser && keys::l) { light_steps++; keys::light_steps_pauser = true; }
+		if (keys::p) { light_speed += LIGHT_SPEED_DIFF * main_frame_timer.travel_distance_multiplier; }
+		if (keys::o) { light_speed -= LIGHT_SPEED_DIFF * main_frame_timer.travel_distance_multiplier; }
+		// NOTE: The following could cause UB if 1 * multiplier is larger than a uint32_t can hold after truncation. But that shouldn't happen unless the program is running unbelievably slow.
+		// If that's the case, it's unusable anyway, so invoking UB won't really make it worse.
+		// But the real reason is that it's very very hard to get the program into a situation like that, and that almost definitely won't happen anyway. If it does though, like I said, it doesn't really matter.
+		if (keys::k) { light_steps -= 1 * main_frame_timer.travel_distance_multiplier; }
+		if (keys::l) { light_steps += 1 * main_frame_timer.travel_distance_multiplier; }
+
+		if (keys::n) { fov -= 1 * main_frame_timer.travel_distance_multiplier; }
+		if (keys::m) { fov += 1 * main_frame_timer.travel_distance_multiplier; }
 
 		if (prev_light_speed != light_speed) {
 			if (!renderer.loadLightSpeed(light_speed)) { debuglogger::out << debuglogger::error << "failed to load light speed" << debuglogger::endl; EXIT_FROM_THREAD; }
@@ -301,6 +317,12 @@ void graphicsLoop() {
 		if (prev_light_steps != light_steps) {
 			if (!renderer.loadLightStepAmount(light_steps)) { debuglogger::out << debuglogger::error << "failed to load light step amount" << debuglogger::endl; EXIT_FROM_THREAD; }
 			prev_light_steps = light_steps;
+		}
+
+		if (prev_fov != fov) {
+			renderer.calculateRayOriginBasis(fov);
+			if (!renderer.loadRayOrigin(windowWidth, windowHeight)) { debuglogger::out << debuglogger::error << "failed to load new ray origin (derived from FOV)" << debuglogger::endl; EXIT_FROM_THREAD; }
+			prev_fov = fov;
 		}
 
 		if (!renderer.loadCameraPos(&camera.pos)) { debuglogger::out << debuglogger::error << "failed to load new camera position" << debuglogger::endl; EXIT_FROM_THREAD; }
