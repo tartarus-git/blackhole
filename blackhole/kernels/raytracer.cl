@@ -131,7 +131,6 @@ __kernel void raytracer(__write_only image2d_t outputFrame, int windowWidth, int
 	if (coords.x >= windowWidth) { return; }
 	coords.y = get_global_id(1);
 	if (coords.y >= windowHeight) { return; }
-	// TODO: Make sure the host does the square fitting algorithm for the work group sizes.
 
 	// NOTE: Z coords go out of the screen towards the viewer.
 

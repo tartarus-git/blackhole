@@ -51,9 +51,11 @@ bool updateDeviceWindowSizeVars(int windowWidth, int windowHeight) {
 }
 
 void updateKernelInterfaceMetadata(int windowWidth, int windowHeight) {
-	compute::globalSize[0] = windowWidth + (compute::kernelWorkGroupSize - (windowWidth % compute::kernelWorkGroupSize));
-	compute::globalSize[1] = windowHeight;
-	compute::localSize[0] = compute::kernelWorkGroupSize;
+	std::pair<size_t, size_t> local_size = calcSmallestBoundingBox(compute::kernelWorkGroupSize);
+	compute::globalSize[0] = windowWidth + (local_size.first - ((windowWidth - 1) % local_size.first + 1));
+	compute::globalSize[1] = windowHeight + (local_size.second - ((windowHeight - 1) % local_size.second + 1));
+	compute::localSize[0] = local_size.first;
+	compute::localSize[1] = local_size.second;
 	compute::frameRegion[0] = windowWidth;
 	compute::frameRegion[1] = windowHeight;
 }
@@ -92,7 +94,6 @@ bool Renderer::init(int windowWidth, int windowHeight) const {
 	if (!updateDeviceWindowSizeVars(windowWidth, windowHeight)) { release(); return false; }
 	
 	// Set a couple of arguments that won't ever change. The rest of these arrays below change so we can't set them here.
-	compute::localSize[1] = 1;
 	compute::frameOrigin[0] = 0;
 	compute::frameOrigin[1] = 0;
 	compute::frameOrigin[2] = 0;
