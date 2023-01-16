@@ -2,7 +2,8 @@
 
 #include <cmath>
 
-class Vector3f
+// NOTE: We make sure that this is as big as a Vector4f, so that it doesn't cause problems when copying into kernel args.
+class alignas(sizeof(float) * 4) Vector3f
 {
 public:
 	float x;

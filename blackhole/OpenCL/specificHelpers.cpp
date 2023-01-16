@@ -23,10 +23,10 @@ namespace compute {
 		cl_int err = initOpenCLBindings();
 		if (err != CL_SUCCESS) { return err; }
 
-		err = initOpenCLVarsForBestDevice({ 3, 0 }, platform, device, context, commandQueue);
+		err = initOpenCLVarsForBestDevice({ 2, 1 }, platform, device, context, commandQueue);
 		if (err != CL_SUCCESS) { freeOpenCLLib(); return err; }
 
-		err = setupComputeKernelFromFile(context, device, "kernels/raytracer.cl", "raytracer", program, kernel, kernelWorkGroupSize, buildLog);
+		err = setupComputeKernelFromFile(context, device, sourceFile, kernelName, program, kernel, kernelWorkGroupSize, buildLog);
 		if (err != CL_SUCCESS) { releaseContextVars(); freeOpenCLLib(); return err; }
 	}
 

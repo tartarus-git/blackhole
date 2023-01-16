@@ -62,7 +62,7 @@ void updateKernelInterfaceMetadata(int windowWidth, int windowHeight) {
 
 void releaseOpenCLFoundation() {
 	if (compute::releaseDeviceVars() != CL_SUCCESS) { debuglogger::out << debuglogger::error << "failed to release compute device vars" << debuglogger::endl; }
-	if (freeOpenCLLib() != CL_SUCCESS) { debuglogger::out << debuglogger::error << "failed to free OpenCL library" << debuglogger::endl; }
+	if (freeOpenCLLib() == false) { debuglogger::out << debuglogger::error << "failed to free OpenCL library" << debuglogger::endl; }
 }
 
 bool releaseOutputFrame() {
@@ -77,7 +77,7 @@ void Renderer::release() const {
 
 bool Renderer::init(int windowWidth, int windowHeight) const {
 	std::string buildLog;
-	cl_int err = compute::setupDevice("raytracer.cl", "raytracer", buildLog);
+	cl_int err = compute::setupDevice("kernels/raytracer.cl", "raytracer", buildLog);
 	if (err != CL_SUCCESS) {
 		debuglogger::out << debuglogger::error << "failed to set up compute device" << debuglogger::endl;
 		if (err == CL_EXT_BUILD_FAILED_WITH_BUILD_LOG) {
@@ -116,7 +116,9 @@ bool Renderer::recallibrateAfterWindowResize(int newWindowWidth, int newWindowHe
 
 #define KERNEL_SCENE_ARGS_START 5
 
-// We're only filling 3/4 of the actual kernel arg since the actual kernel arg is a float4, but the kernel is built such that that last bit of data is allowed to be undefined.
+// NOTE: float3's are actually as wide as float4's in the kernel, so putting in a Vector3f would only fill 3/4 of the parameter slot.
+// It seems that OpenCL 3.0 supports this, but 2.1 doesn't. We alignas Vector3f to 16 bytes to make Vector3f as wide as float4, which solves this problem.
+// That means this code is totally fine and it fills the whole kernel argument.
 bool Renderer::loadCameraPos(const Vector3f* cameraPos) const { return clSetKernelArg(compute::kernel, KERNEL_SCENE_ARGS_START, sizeof(Vector3f), cameraPos) == CL_SUCCESS; }
 
 void Renderer::calculateRayOriginBasis(float FOV) { rayOriginBasis = 0.5f / tan(FOV / 180 * CONSTANTS_PI / 2); }
